@@ -22,8 +22,6 @@ models/*
 # Generated MIDI and output files
 outputs/*
 !outputs/.gitkeep
-*.mid
-*.midi
 
 # Operating-system files
 .DS_Store
