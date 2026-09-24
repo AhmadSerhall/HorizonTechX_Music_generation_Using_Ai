@@ -43,6 +43,8 @@ def apply_theme() -> None:
         div[data-baseweb="select"] > div, div[data-baseweb="input"] > div { background: #0B1115 !important; border-color: var(--line) !important; color: var(--text) !important; }
         div[data-baseweb="select"] span, div[data-baseweb="input"] input { color: var(--text) !important; }
         div[data-baseweb="select"] svg { fill: var(--muted); }
+        [data-testid="stSelectbox"], [data-testid="stSelectbox"] * { cursor: pointer !important; user-select: none; }
+        [data-testid="stSelectbox"] input { caret-color: transparent !important; }
         [data-testid="stSlider"] [role="slider"] { background: var(--teal) !important; border-color: var(--teal-bright) !important; }
         [data-testid="stSlider"] div[data-baseweb="slider"] > div > div { background: var(--teal); }
         .stButton > button, [data-testid="stDownloadButton"] > button { border: 0; border-radius: 12px; color: #fff; font-weight: 700; background: linear-gradient(95deg, #14B8A6, #38BDF8); box-shadow: 0 8px 22px rgba(20,184,166,.20); }
@@ -365,10 +367,11 @@ def render_player() -> None:
         if result:
             midi_path = Path(str(result["midi_path"]))
             if midi_path.exists():
-                preview_path, preview_error = render_midi_preview(midi_path)
+                preview_path, preview_status = render_midi_preview(midi_path)
                 if preview_path:
                     result["audio_preview_path"] = str(preview_path)
                     st.audio(preview_path.read_bytes(), format="audio/wav")
+                    st.caption(preview_status or "Local audio preview")
                 else:
                     st.caption(
                         "Audio preview is unavailable on this device. MIDI download remains available."
