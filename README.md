@@ -59,4 +59,39 @@ The model uses integer event IDs with an Embedding layer, then an LSTM, Dropout,
 a softmax output layer. Training saves `models/<genre>_lstm.keras` and
 `models/<genre>_training_metadata.json`.
 
-This repository currently contains Phases 1 through 4 only.
+## Music generation
+
+Generate a MIDI file from the trained model without retraining:
+
+```powershell
+python -m src.generate --genre classical --length 200 --temperature 1.0 --seed 42
+```
+
+The temperature controls sampling randomness: `0.5` is more conservative, `1.0` is
+balanced, and `1.5` is more random. Generated MIDI files are saved in `outputs/`.
+
+For refined playback with a minimum reconstructed duration and tempo:
+
+```powershell
+python -m src.generate --genre classical --length 200 --temperature 1.0 --seed 42 --min-duration 0.5 --tempo 100
+```
+
+Evaluate a generated file with:
+
+```powershell
+python -m src.evaluate <generated-midi-path>
+```
+
+This repository currently contains Phases 1 through 7 only.
+
+## Streamlit studio
+
+Run the NeuraTune interface with:
+
+```powershell
+streamlit run app.py
+```
+
+The studio provides generation controls for length, temperature, seed, tempo, and
+playback-only minimum duration. It offers MIDI download plus a pitch and rhythm
+analysis dashboard for each generated composition.
