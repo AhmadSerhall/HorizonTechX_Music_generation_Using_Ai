@@ -1,5 +1,6 @@
 """Discover and validate MIDI files for the AI Music Generation project."""
 
+import argparse
 from pathlib import Path
 
 from music21 import converter
@@ -67,14 +68,31 @@ def _display_path(path: Path) -> str:
 
 def main() -> None:
     """Print a concise summary of the raw MIDI dataset."""
-    midi_files = discover_midi_files()
+    parser = argparse.ArgumentParser(description="Validate raw MIDI files.")
+    parser.add_argument("--genre", help="Validate files from one genre folder.")
+    parser.add_argument(
+        "--limit",
+        type=int,
+        help="Maximum number of discovered MIDI files to validate.",
+    )
+    args = parser.parse_args()
+
+    if args.limit is not None and args.limit < 0:
+        parser.error("--limit must be zero or a positive integer.")
+
+    midi_files = discover_midi_files(genre=args.genre)
+    selected_files = midi_files[: args.limit] if args.limit is not None else midi_files
     classical_files = discover_midi_files(genre="classical")
     jazz_files = discover_midi_files(genre="jazz")
-    non_midi_files = find_non_midi_files()
-    valid_files, invalid_files = validate_midi_files(midi_files)
+    non_midi_directory = RAW_DATA_DIR / args.genre if args.genre else RAW_DATA_DIR
+    non_midi_files = find_non_midi_files(non_midi_directory)
+    valid_files, invalid_files = validate_midi_files(selected_files)
 
     print("MIDI dataset summary")
-    print(f"Total MIDI files: {len(midi_files)}")
+    if args.genre:
+        print(f"Selected genre: {args.genre}")
+    print(f"Total MIDI files discovered: {len(midi_files)}")
+    print(f"Selected for validation: {len(selected_files)}")
     print(f"Classical files: {len(classical_files)}")
     print(f"Jazz files: {len(jazz_files)}")
     print(f"Valid files: {len(valid_files)}")

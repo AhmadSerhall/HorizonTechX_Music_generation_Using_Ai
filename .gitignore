@@ -27,3 +27,7 @@ outputs/*
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Raw MIDI datasets
+data/raw/**/*.mid
+data/raw/**/*.midi
