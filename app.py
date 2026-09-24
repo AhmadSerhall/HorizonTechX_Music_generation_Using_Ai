@@ -1,12 +1,15 @@
 """NeuraTune: a compact Streamlit studio for AI MIDI generation."""
 
 import json
+import wave
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
+from music21 import chord, converter, note
 
 from src.audio_preview import render_midi_preview
 from src.evaluate import PITCH_CLASS_NAMES, analyze_midi
@@ -77,6 +80,10 @@ def apply_theme() -> None:
         .wave-caption { color: var(--muted); font-size: .67rem; margin: .55rem 0 .2rem; }
         .waveform { height: 28px; display: flex; align-items: center; gap: 3px; overflow: hidden; }
         .waveform span { width: 5px; border-radius: 6px; background: linear-gradient(#2DD4BF, #38BDF8); opacity: .9; }
+        .listen-label { color: #99F6E4; font-size: .69rem; font-weight: 800; letter-spacing: .10em; margin: .7rem 0 .3rem; }
+        [data-testid="stAudio"] { border: 1px solid rgba(45,212,191,.20); border-radius: 12px; background: #0B1115; overflow: hidden; }
+        [data-testid="stImage"] { position: relative; overflow: hidden; border-radius: 12px; }
+        [data-testid="stImage"] button { position: absolute !important; top: .5rem !important; right: .5rem !important; z-index: 5 !important; background: rgba(7,11,15,.82) !important; border: 1px solid var(--line) !important; border-radius: 9px !important; }
         .metric-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: .4rem; margin: .6rem 0; }
         .metric-block { padding: .48rem; border-radius: 10px; border: 1px solid rgba(255,255,255,.08); background: rgba(5,9,20,.42); }
         .metric-value { color: var(--text); font-size: 1rem; font-weight: 800; overflow-wrap: anywhere; }
@@ -358,6 +365,57 @@ def player_markup(result: dict[str, object] | None) -> str:
     """
 
 
+@st.cache_data(show_spinner=False)
+def synthesize_midi_preview(midi_path_string: str, tempo_bpm: float) -> bytes | None:
+    """Create a lightweight WAV preview using music21 + NumPy only."""
+    try:
+        score = converter.parse(midi_path_string)
+        spq = 60.0 / max(float(tempo_bpm), 1.0)
+        events = []
+        for element in score.flatten().notes:
+            start = float(element.offset) * spq
+            duration = max(float(element.duration.quarterLength) * spq, 0.04)
+            pitches = [element.pitch] if isinstance(element, note.Note) else list(element.pitches) if isinstance(element, chord.Chord) else []
+            events.extend((start, duration, float(pitch.frequency)) for pitch in pitches)
+        if not events:
+            return None
+        sample_rate = 22050
+        end_time = min(max(start + duration for start, duration, _ in events) + .25, 180.0)
+        audio = np.zeros(int(end_time * sample_rate) + 1, dtype=np.float32)
+        for start, duration, frequency in events:
+            if start >= end_time:
+                continue
+            duration = min(duration, end_time - start)
+            count = max(1, int(duration * sample_rate))
+            t = np.arange(count, dtype=np.float32) / sample_rate
+            tone = np.sin(2*np.pi*frequency*t) + .34*np.sin(4*np.pi*frequency*t) + .16*np.sin(6*np.pi*frequency*t)
+            attack = max(1, min(count, int(.012 * sample_rate)))
+            env = np.exp(-2.4*t/max(duration,.05)).astype(np.float32)
+            env[:attack] *= np.linspace(0, 1, attack, dtype=np.float32)
+            i = int(start * sample_rate); j = min(i + count, len(audio))
+            audio[i:j] += tone[:j-i] * env[:j-i]
+        peak = float(np.max(np.abs(audio)))
+        if peak > 0: audio = .88 * audio / peak
+        pcm = (audio * 32767).astype(np.int16)
+        buffer = BytesIO()
+        with wave.open(buffer, 'wb') as wav_file:
+            wav_file.setnchannels(1); wav_file.setsampwidth(2); wav_file.setframerate(sample_rate); wav_file.writeframes(pcm.tobytes())
+        return buffer.getvalue()
+    except Exception:
+        return None
+
+def get_audio_preview(midi_path: Path, tempo_bpm: float) -> tuple[bytes | None, str]:
+    """Prefer the existing renderer, then fall back to the built-in synth."""
+    try:
+        preview_path, status = render_midi_preview(midi_path)
+        if preview_path and Path(preview_path).is_file():
+            return Path(preview_path).read_bytes(), status or 'Local rendered audio preview'
+    except Exception:
+        pass
+    preview = synthesize_midi_preview(str(midi_path), tempo_bpm)
+    return (preview, 'Instant browser preview · lightweight local synthesizer') if preview else (None, 'Audio preview could not be created.')
+
+
 def render_player() -> None:
     """Render the result card, download action, and small session history."""
     result = st.session_state.latest_result
@@ -367,15 +425,13 @@ def render_player() -> None:
         if result:
             midi_path = Path(str(result["midi_path"]))
             if midi_path.exists():
-                preview_path, preview_status = render_midi_preview(midi_path)
-                if preview_path:
-                    result["audio_preview_path"] = str(preview_path)
-                    st.audio(preview_path.read_bytes(), format="audio/wav")
-                    st.caption(preview_status or "Local audio preview")
+                preview_bytes, preview_status = get_audio_preview(midi_path, float(result["settings"].get("tempo", 100)))
+                if preview_bytes:
+                    st.markdown("<div class='listen-label'>LISTEN TO YOUR COMPOSITION · PLAY / PAUSE</div>", unsafe_allow_html=True)
+                    st.audio(preview_bytes, format="audio/wav")
+                    st.caption(preview_status)
                 else:
-                    st.caption(
-                        "Audio preview is unavailable on this device. MIDI download remains available."
-                    )
+                    st.warning(preview_status)
                 st.download_button(
                     "Download MIDI",
                     data=midi_path.read_bytes(),
@@ -423,7 +479,7 @@ def render_recent_compositions() -> None:
 
 
 def render_distribution_chart(labels: list[str], values: list[int], title: str, color: str) -> None:
-    """Render a compact dark chart using the existing Matplotlib dependency."""
+    """Render a compact chart as an image with its expand control inside the frame."""
     figure, axis = plt.subplots(figsize=(8, 2.15))
     figure.patch.set_facecolor("#0D1418")
     axis.set_facecolor("#0D1418")
@@ -433,8 +489,10 @@ def render_distribution_chart(labels: list[str], values: list[int], title: str, 
     axis.spines[["top", "right"]].set_visible(False)
     axis.spines[["left", "bottom"]].set_color("#475569")
     axis.grid(axis="y", color="#334155", alpha=.35)
-    st.pyplot(figure, use_container_width=True)
+    image_buffer = BytesIO()
+    figure.savefig(image_buffer, format="png", dpi=140, bbox_inches="tight", facecolor=figure.get_facecolor())
     plt.close(figure)
+    st.image(image_buffer.getvalue(), use_container_width=True)
 
 
 def render_analysis() -> None:
