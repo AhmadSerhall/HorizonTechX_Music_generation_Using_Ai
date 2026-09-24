@@ -95,3 +95,17 @@ streamlit run app.py
 The studio provides generation controls for length, temperature, seed, tempo, and
 playback-only minimum duration. It offers MIDI download plus a pitch and rhythm
 analysis dashboard for each generated composition.
+
+### Optional local audio preview
+
+MIDI download works without extra setup. To enable the in-app WAV preview, install
+**FluidSynth** and provide a General MIDI `.sf2` soundfont. Make the `fluidsynth`
+command available on your `PATH`, then set the soundfont path before starting Streamlit:
+
+```powershell
+$env:NEURATUNE_SOUNDFONT = "C:\path\to\your\soundfont.sf2"
+streamlit run app.py
+```
+
+NeuraTune does not download or bundle a soundfont; preview WAV files are cached under
+`outputs/previews/` and MIDI generation still works when local preview support is unavailable.
