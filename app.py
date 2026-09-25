@@ -538,7 +538,12 @@ def render_player() -> None:
                         "<div class='listen-label'>LISTEN TO YOUR COMPOSITION · PLAY / PAUSE</div>",
                         unsafe_allow_html=True,
                     )
-                    st.audio(preview_bytes, format="audio/wav")
+                    render_piano_visualizer_player(
+                        midi_path,
+                        float(result["settings"].get("tempo", 100)),
+                        preview_bytes,
+                        audio_preview_label(preview_bytes, preview_status),
+                    )
                     st.caption(preview_status)
                 else:
                     st.warning(preview_status)
@@ -755,10 +760,10 @@ def extract_piano_timeline(midi_path_string: str, fallback_bpm: float) -> dict[s
     return {"notes": notes, "duration": total_duration, "bpm": bpm}
 
 
-def render_piano_visualizer(
+def render_piano_visualizer_player(
     midi_path: Path, fallback_bpm: float, audio_preview: bytes | None, audio_status: str
 ) -> None:
-    """Render a client-side Synthesia-inspired view synchronized to the WAV preview."""
+    """Render a compact player that expands into a client-side visualizer modal."""
     try:
         timeline = extract_piano_timeline(str(midi_path), fallback_bpm)
     except Exception:
@@ -783,7 +788,14 @@ def render_piano_visualizer(
     )
     component_html = """
     <style>
-      html, body { margin: 0; background: transparent; font-family: Inter, system-ui, sans-serif; }
+      html, body { height: 100%; margin: 0; background: transparent; font-family: Inter, system-ui, sans-serif; }
+      .mini-player { height: 54px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid rgba(45,212,191,.28); border-radius: 16px; background: #0B1115; color: #F8FAFC; }
+      .mini-play { width: 34px; height: 34px; padding: 0; border-radius: 50%; background: linear-gradient(145deg, #14B8A6, #38BDF8); color: #071014; }
+      .mini-copy { flex: 1; min-width: 0; } .mini-label { color: #99F6E4; font-size: 10px; font-weight: 800; letter-spacing: .08em; } .mini-progress { height: 4px; margin-top: 6px; overflow: hidden; border-radius: 99px; background: #26333B; } .mini-progress > div { width: 0%; height: 100%; background: linear-gradient(90deg, #14B8A6, #38BDF8); }
+      .mini-time { min-width: 74px; color: #CBD5E1; font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
+      .modal { display: none; position: fixed; inset: 0; z-index: 2; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; background: rgba(3,7,10,.86); backdrop-filter: blur(10px); }
+      .modal.open { display: flex; } .modal-card { width: min(1060px, 96vw); padding: 14px; border: 1px solid rgba(45,212,191,.3); border-radius: 18px; background: #0D1418; box-shadow: 0 28px 80px rgba(0,0,0,.55); }
+      .modal-title { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 9px; color: #99F6E4; font-size: 12px; font-weight: 800; letter-spacing: .1em; }
       .visualizer { height: 480px; box-sizing: border-box; padding: 12px; border: 1px solid rgba(148,163,184,.14); border-radius: 16px; background: linear-gradient(145deg, #111B20, #0D1418); color: #F8FAFC; overflow: hidden; }
       .topline { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; color: #94A3B8; }
       .status { color: #99F6E4; font-weight: 700; }
@@ -799,19 +811,27 @@ def render_piano_visualizer(
       .key.active.black-key { background: #38BDF8; box-shadow: 0 0 13px rgba(56,189,248,.82); }
       .key-label { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); color: #334155; font-size: 9px; font-weight: 800; }
       .controls { display: flex; align-items: center; gap: 7px; margin-top: 10px; }
+      .close-action { margin-left: auto; border-color: rgba(248,250,252,.18); color: #CBD5E1; }
       button { border: 1px solid rgba(45,212,191,.3); border-radius: 8px; padding: 6px 9px; background: #111B20; color: #F8FAFC; font-weight: 700; cursor: pointer; }
       button:hover:not(:disabled) { background: #143B3D; } button:disabled { cursor: not-allowed; opacity: .45; }
       .progress { flex: 1; height: 5px; overflow: hidden; border-radius: 99px; background: #26333B; }
       .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #14B8A6, #38BDF8); }
       .time { min-width: 72px; text-align: right; color: #CBD5E1; font-variant-numeric: tabular-nums; font-size: 12px; }
     </style>
+    <div class="mini-player">
+      <button id="mini-toggle" class="mini-play" aria-label="Play composition">▶</button>
+      <div class="mini-copy"><div class="mini-label">PLAY WITH PIANO VISUALIZER</div><div class="mini-progress"><div id="mini-progress"></div></div></div>
+      <span class="mini-time" id="mini-time">0:00 / 0:00</span>
+    </div>
+    <div class="modal" id="modal"><div class="modal-card">
+      <div class="modal-title"><span>PIANO VISUALIZER</span><span id="modal-status"></span></div>
     <div class="visualizer">
       <div class="topline"><span class="status" id="status"></span><span id="tempo"></span></div>
       <div class="lane" id="lane"></div>
       <div class="keyboard" id="keyboard"></div>
-      <div class="controls"><button id="play-toggle">▶ Play</button><button id="restart">↺ Restart</button><div class="progress"><div class="progress-fill" id="progress"></div></div><span class="time" id="time"></span></div>
+      <div class="controls"><button id="play-toggle">▶ Play</button><button id="restart">↺ Restart</button><button id="minimize">Minimize</button><div class="progress"><div class="progress-fill" id="progress"></div></div><span class="time" id="time"></span><button id="exit" class="close-action">Exit</button></div>
       <audio id="audio" preload="metadata"></audio>
-    </div>
+    </div></div></div>
     <script>
       const timeline = TIMELINE_DATA;
       let audioSource = AUDIO_SOURCE;
@@ -824,9 +844,12 @@ def render_piano_visualizer(
       const playButton = document.getElementById('play-toggle');
       const restartButton = document.getElementById('restart'), progress = document.getElementById('progress');
       const timeLabel = document.getElementById('time');
+      const miniToggle = document.getElementById('mini-toggle'), miniProgress = document.getElementById('mini-progress'), miniTime = document.getElementById('mini-time');
+      const modal = document.getElementById('modal'), minimizeButton = document.getElementById('minimize'), exitButton = document.getElementById('exit');
+      const modalStatus = document.getElementById('modal-status'); let savedFrameStyle;
       document.getElementById('tempo').textContent = `${Math.round(timeline.bpm)} BPM`;
       if (audioSource) audio.src = audioSource;
-      status.textContent = audioSource ? AUDIO_LABEL : 'Audio preview unavailable — visualization only';
+      status.textContent = audioSource ? AUDIO_LABEL : 'Audio preview unavailable — visualization only'; modalStatus.textContent = status.textContent;
       const whitePitches = []; for (let p = low; p <= high; p++) if (!blackClasses.has(p % 12)) whitePitches.push(p);
       const whiteWidth = 100 / whitePitches.length, centers = {}, keyNodes = {};
       let whiteIndex = 0;
@@ -853,19 +876,25 @@ def render_piano_visualizer(
           bar.classList.toggle('active', isActive); if (isActive) active.add(note.pitch);
         });
         Object.entries(keyNodes).forEach(([pitch, key]) => key.classList.toggle('active', active.has(Number(pitch))));
-        progress.style.width = `${Math.min(100, current / duration * 100)}%`; timeLabel.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
+        const progressValue = `${Math.min(100, current / duration * 100)}%`; progress.style.width = progressValue; miniProgress.style.width = progressValue; timeLabel.textContent = `${formatTime(current)} / ${formatTime(duration)}`; miniTime.textContent = timeLabel.textContent;
         if ((audioSource && !audio.paused && !audio.ended) || (!audioSource && visualPlaying && current < duration)) frameId = requestAnimationFrame(render);
         else if (!audioSource) { visualTime = current; visualPlaying = false; }
       };
-      const updatePlayButton = playing => { playButton.textContent = playing ? '⏸ Pause' : '▶ Play'; };
+      const updatePlayButton = playing => { playButton.textContent = playing ? '⏸ Pause' : '▶ Play'; miniToggle.textContent = playing ? '⏸' : '▶'; miniToggle.setAttribute('aria-label', playing ? 'Pause composition' : 'Play composition'); };
+      const setFrameExpanded = expanded => { try { const frame = window.frameElement; if (!frame) return; if (expanded) { if (savedFrameStyle === undefined) savedFrameStyle = frame.getAttribute('style'); frame.style.position = 'fixed'; frame.style.inset = '0'; frame.style.width = '100vw'; frame.style.height = '100vh'; frame.style.zIndex = '999999'; frame.style.border = '0'; } else if (savedFrameStyle === null) frame.removeAttribute('style'); else if (savedFrameStyle !== undefined) frame.setAttribute('style', savedFrameStyle); } catch (_) {} };
+      const openModal = () => { modal.classList.add('open'); setFrameExpanded(true); };
+      const minimizeModal = () => { modal.classList.remove('open'); setFrameExpanded(false); };
       const start = () => {
-        if (audioSource) audio.play().catch(() => { status.textContent = 'Audio playback was blocked — visualization only'; audioSource = null; visualStartedAt = performance.now(); visualPlaying = true; updatePlayButton(true); frameId = requestAnimationFrame(render); });
+        if (audioSource) audio.play().catch(() => { status.textContent = 'Audio playback was blocked — visualization only'; modalStatus.textContent = status.textContent; audioSource = null; visualStartedAt = performance.now(); visualPlaying = true; updatePlayButton(true); frameId = requestAnimationFrame(render); });
         else { visualStartedAt = performance.now(); visualPlaying = true; updatePlayButton(true); frameId = requestAnimationFrame(render); }
       };
       const pause = () => { if (audioSource) audio.pause(); else { visualTime = currentTime(performance.now()); visualPlaying = false; updatePlayButton(false); } cancelAnimationFrame(frameId); render(performance.now()); };
       const restart = () => { if (audioSource) { audio.currentTime = 0; } visualTime = 0; visualStartedAt = performance.now(); if (!audioSource || !audio.paused) { visualPlaying = true; cancelAnimationFrame(frameId); frameId = requestAnimationFrame(render); } else render(performance.now()); };
       playButton.onclick = () => { if ((audioSource && !audio.paused) || (!audioSource && visualPlaying)) pause(); else start(); };
+      miniToggle.onclick = () => { if ((audioSource && !audio.paused) || (!audioSource && visualPlaying)) pause(); else { openModal(); start(); } };
       restartButton.onclick = restart;
+      minimizeButton.onclick = minimizeModal;
+      exitButton.onclick = () => { pause(); if (audioSource) audio.currentTime = 0; visualTime = 0; render(performance.now()); minimizeModal(); };
       if (audioSource) { audio.onplay = () => { updatePlayButton(true); cancelAnimationFrame(frameId); frameId = requestAnimationFrame(render); }; audio.onpause = () => { updatePlayButton(false); cancelAnimationFrame(frameId); render(performance.now()); }; audio.onended = () => { updatePlayButton(false); cancelAnimationFrame(frameId); render(performance.now()); }; }
       else updatePlayButton(false);
       render(performance.now());
@@ -878,7 +907,7 @@ def render_piano_visualizer(
         .replace("KEY_HIGH", str(highest_key))
         .replace("AUDIO_LABEL", json.dumps(audio_status))
     )
-    components.html(component_html, height=500, scrolling=False)
+    components.html(component_html, height=70, scrolling=False)
 
 
 @st.cache_data(show_spinner=False)
@@ -987,8 +1016,8 @@ def render_analysis() -> None:
     metrics = result.get("metrics") if result else None
     with st.container(border=True):
         st.markdown("<div class='analysis-title'>COMPOSITION ANALYSIS</div>", unsafe_allow_html=True)
-        overview_tab, piano_visualizer_tab, pitch_tab, rhythm_tab, insights_tab, model_tab = st.tabs(
-            ["Overview", "Piano Visualizer", "Pitch Analysis", "Rhythm", "Training Insights", "About the Model"]
+        overview_tab, pitch_tab, rhythm_tab, insights_tab, model_tab = st.tabs(
+            ["Overview", "Pitch Analysis", "Rhythm", "Training Insights", "About the Model"]
         )
         with overview_tab:
             if metrics:
@@ -999,23 +1028,6 @@ def render_analysis() -> None:
                 fourth.metric("Range", f"{metrics['lowest_pitch']}–{metrics['highest_pitch']}")
             else:
                 st.caption("Generate a composition to inspect note, chord, duration, and pitch-range metrics.")
-        with piano_visualizer_tab:
-            midi_path = Path(str(result["midi_path"])) if result else None
-            if midi_path and midi_path.is_file():
-                preview_bytes, preview_status, preview_path = get_audio_preview(
-                    midi_path, float(result["settings"].get("tempo", 100))
-                )
-                if preview_path and result.get("audio_preview_path") != str(preview_path):
-                    result["audio_preview_path"] = str(preview_path)
-                    save_persistent_history(st.session_state.generation_history)
-                render_piano_visualizer(
-                    midi_path,
-                    float(result["settings"].get("tempo", 100)),
-                    preview_bytes,
-                    audio_preview_label(preview_bytes, preview_status),
-                )
-            else:
-                st.caption("Generate or select a composition to use Piano Visualizer.")
         with pitch_tab:
             if metrics:
                 distribution = metrics["pitch_class_distribution"]
