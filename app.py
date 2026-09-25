@@ -2,6 +2,7 @@
 
 import base64
 import json
+import uuid
 import wave
 from datetime import datetime
 from io import BytesIO
@@ -28,6 +29,8 @@ from src.generate import (
 
 GENRE = "classical"
 HISTORY_PATH = OUTPUTS_DIR / "history.json"
+HISTORY_LIMIT = 10
+TEMPERATURE_PRESETS = (("Focused", 0.6), ("Balanced", 1.0), ("Experimental", 1.4))
 
 
 def apply_theme() -> None:
@@ -54,6 +57,8 @@ def apply_theme() -> None:
         [data-testid="stSlider"] div[data-baseweb="slider"] > div > div { background: var(--teal); }
         .stButton > button, [data-testid="stDownloadButton"] > button { border: 0; border-radius: 12px; color: #fff; font-weight: 700; background: linear-gradient(95deg, #14B8A6, #38BDF8); box-shadow: 0 8px 22px rgba(20,184,166,.20); }
         .stButton > button:hover, [data-testid="stDownloadButton"] > button:hover { border: 0; color: #fff; filter: brightness(1.08); }
+        .stButton > button[kind="secondary"] { border: 1px solid var(--line); background: #111B20; box-shadow: none; color: var(--muted); }
+        .stButton > button[kind="secondary"]:hover { border-color: rgba(45,212,191,.45); color: var(--text); }
         button[kind="primary"] { background: linear-gradient(95deg, #14B8A6, #38BDF8) !important; }
         button[data-baseweb="tab"] { color: var(--muted); font-weight: 600; padding: .45rem .75rem; }
         button[data-baseweb="tab"][aria-selected="true"] { color: #CCFBF1; border-bottom-color: var(--teal); }
@@ -116,14 +121,56 @@ def initialize_session_state() -> None:
     if "generation_history" not in st.session_state:
         history = load_persistent_history()
         st.session_state.generation_history = history
-        st.session_state.latest_result = history[0] if history else None
-        st.session_state.latest_midi_path = history[0]["midi_path"] if history else None
-        st.session_state.latest_settings = history[0]["settings"] if history else None
-        st.session_state.latest_metrics = history[0].get("metrics") if history else None
+        set_selected_composition(history[0] if history else None)
+        if history:
+            save_persistent_history(history)
+    else:
+        history = st.session_state.generation_history
+        for result in history:
+            result.setdefault("id", str(uuid.uuid5(uuid.NAMESPACE_URL, str(result.get("midi_path", "")))))
+            result.setdefault("display_name", "")
+            result.setdefault("audio_preview_path", None)
+            result.setdefault("favorite", False)
+        for result in history:
+            if not result.get("display_name"):
+                result["display_name"] = next_display_name(history)
     st.session_state.setdefault("latest_result", None)
     st.session_state.setdefault("latest_midi_path", None)
     st.session_state.setdefault("latest_settings", None)
     st.session_state.setdefault("latest_metrics", None)
+    st.session_state.setdefault("delete_confirmation_id", None)
+
+
+def set_selected_composition(result: dict[str, object] | None) -> None:
+    """Update the current player and analysis result from one library entry."""
+    st.session_state.latest_result = result
+    st.session_state.latest_midi_path = result.get("midi_path") if result else None
+    st.session_state.latest_settings = result.get("settings") if result else None
+    st.session_state.latest_metrics = result.get("metrics") if result else None
+
+
+def safe_output_artifact_path(path_value: object, allowed_suffixes: set[str]) -> Path | None:
+    """Return an output artifact path only when it stays inside outputs/."""
+    if not path_value:
+        return None
+    path = Path(str(path_value))
+    if not path.is_absolute():
+        path = OUTPUTS_DIR / path
+    try:
+        path.resolve().relative_to(OUTPUTS_DIR.resolve())
+    except (OSError, ValueError):
+        return None
+    return path if path.suffix.lower() in allowed_suffixes else None
+
+
+def next_display_name(history: list[dict[str, object]]) -> str:
+    """Choose the next available beginner-friendly default library name."""
+    existing_names = {str(item.get("display_name", "")) for item in history}
+    for number in range(1, 1000):
+        name = f"Neural Composition {number:03d}"
+        if name not in existing_names:
+            return name
+    return "Neural Composition"
 
 
 def history_record(result: dict[str, object]) -> dict[str, object]:
@@ -131,8 +178,11 @@ def history_record(result: dict[str, object]) -> dict[str, object]:
     settings = result["settings"]
     midi_path = Path(str(result["midi_path"]))
     return {
+        "id": str(result.get("id") or uuid.uuid4()),
+        "display_name": str(result.get("display_name") or "Neural Composition"),
         "midi_path": str(midi_path),
         "midi_filename": midi_path.name,
+        "audio_preview_path": result.get("audio_preview_path"),
         "created_at": result.get("created_at", datetime.now().isoformat(timespec="seconds")),
         "length": settings["length"],
         "temperature": settings["temperature"],
@@ -143,6 +193,7 @@ def history_record(result: dict[str, object]) -> dict[str, object]:
         "seed_sequence_length": result["seed_sequence_length"],
         "skipped_events": result["skipped_events"],
         "metrics": result.get("metrics"),
+        "favorite": bool(result.get("favorite", False)),
     }
 
 
@@ -154,8 +205,13 @@ def result_from_history(record: dict[str, object]) -> dict[str, object] | None:
     if not midi_path.is_file():
         return None
 
+    preview_path = safe_output_artifact_path(record.get("audio_preview_path"), {".wav"})
+
     return {
+        "id": str(record.get("id") or uuid.uuid5(uuid.NAMESPACE_URL, str(midi_path))),
+        "display_name": str(record.get("display_name") or ""),
         "midi_path": str(midi_path),
+        "audio_preview_path": str(preview_path) if preview_path and preview_path.is_file() else None,
         "created_at": record.get("created_at", ""),
         "settings": {
             "length": record.get("length", record.get("generated_events", 0)),
@@ -168,6 +224,7 @@ def result_from_history(record: dict[str, object]) -> dict[str, object] | None:
         "seed_sequence_length": record.get("seed_sequence_length", 50),
         "skipped_events": record.get("skipped_events", 0),
         "metrics": record.get("metrics"),
+        "favorite": bool(record.get("favorite", False)),
     }
 
 
@@ -176,7 +233,7 @@ def save_persistent_history(history: list[dict[str, object]]) -> None:
     OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
     records = [
         history_record(result)
-        for result in history[:10]
+        for result in history[:HISTORY_LIMIT]
         if "midi_path" in result and "settings" in result
     ]
     temporary_path = HISTORY_PATH.with_suffix(".tmp")
@@ -202,7 +259,24 @@ def load_persistent_history() -> list[dict[str, object]]:
             if result:
                 history.append(result)
     history.sort(key=lambda result: str(result.get("created_at", "")), reverse=True)
-    return history[:10]
+    history = history[:HISTORY_LIMIT]
+    for result in history:
+        if not result.get("display_name"):
+            result["display_name"] = next_display_name(history)
+    return history
+
+
+def delete_composition_artifacts(result: dict[str, object]) -> None:
+    """Remove only this composition's MIDI and cached WAV preview from outputs/."""
+    midi_path = safe_output_artifact_path(result.get("midi_path"), {".mid", ".midi"})
+    preview_path = safe_output_artifact_path(result.get("audio_preview_path"), {".wav"})
+    if midi_path and not preview_path:
+        preview_path = safe_output_artifact_path(
+            midi_path.parent / "previews" / f"{midi_path.stem}.wav", {".wav"}
+        )
+    for path in (midi_path, preview_path):
+        if path and path.is_file():
+            path.unlink()
 
 
 def show_loading_overlay() -> object:
@@ -263,7 +337,16 @@ def render_controls() -> tuple[dict[str, int | float | None], bool]:
     with st.container(border=True):
         st.markdown("<div class='card-title'>GENERATION SETTINGS</div>", unsafe_allow_html=True)
         length = st.slider("Generation Length", 50, 500, 200, 10)
-        temperature = st.slider("Creativity", 0.3, 1.5, 1.0, 0.1)
+        st.markdown("<div class='control-help'>CREATIVITY PRESET</div>", unsafe_allow_html=True)
+        preset_columns = st.columns(3)
+        current_temperature = float(st.session_state.get("temperature_control", 1.0))
+        for column, (label, value) in zip(preset_columns, TEMPERATURE_PRESETS):
+            active = current_temperature == value
+            button_label = f"✓ {label}" if active else label
+            if column.button(button_label, key=f"preset_{label.lower()}", type="primary" if active else "secondary", use_container_width=True):
+                st.session_state.temperature_control = value
+                st.rerun()
+        temperature = st.slider("Creativity", 0.3, 1.5, 1.0, 0.1, key="temperature_control")
         st.markdown(
             f"<div class='temperature-state'>{temperature:.1f} · {creativity_state(temperature)}</div>",
             unsafe_allow_html=True,
@@ -316,12 +399,16 @@ def generate_composition(settings: dict[str, int | float | None]) -> dict[str, o
         tempo_bpm=float(settings["tempo"]),
     )
     result: dict[str, object] = {
+        "id": str(uuid.uuid4()),
+        "display_name": next_display_name(st.session_state.generation_history),
         "midi_path": str(output_path),
+        "audio_preview_path": None,
         "created_at": datetime.now().isoformat(timespec="seconds"),
         "settings": settings,
         "seed_sequence_length": sequence_length,
         "generated_events": len(generated_tokens),
         "skipped_events": skipped_events,
+        "favorite": False,
     }
     try:
         result["metrics"] = analyze_midi(output_path)
@@ -349,9 +436,10 @@ def player_markup(result: dict[str, object] | None) -> str:
     metrics = result.get("metrics") or {}
     settings = result["settings"]
     minimum_duration = settings["min_duration"] if settings["min_duration"] is not None else "Original"
+    display_name = str(result.get("display_name") or f"Neural Composition #{settings['seed']}")
     return f"""
     <div class="player-top"><div class="album-art"></div><div>
-      <div class="composition-title">Neural Composition #{settings['seed']}</div>
+      <div class="composition-title">{display_name}</div>
       <div class="composition-meta">Classical Piano · AI Generated</div>
       <div class="midi-badge">MIDI · Generated by NeuraTune</div>
       {waveform_markup()}
@@ -405,16 +493,19 @@ def synthesize_midi_preview(midi_path_string: str, tempo_bpm: float) -> bytes | 
     except Exception:
         return None
 
-def get_audio_preview(midi_path: Path, tempo_bpm: float) -> tuple[bytes | None, str]:
+def get_audio_preview(midi_path: Path, tempo_bpm: float) -> tuple[bytes | None, str, Path | None]:
     """Prefer the existing renderer, then fall back to the built-in synth."""
     try:
         preview_path, status = render_midi_preview(midi_path)
         if preview_path and Path(preview_path).is_file():
-            return Path(preview_path).read_bytes(), status or 'Local rendered audio preview'
+            preview_path = Path(preview_path)
+            return preview_path.read_bytes(), status or 'Local rendered audio preview', preview_path
     except Exception:
         pass
     preview = synthesize_midi_preview(str(midi_path), tempo_bpm)
-    return (preview, 'Instant browser preview · lightweight local synthesizer') if preview else (None, 'Audio preview could not be created.')
+    if preview:
+        return preview, 'Instant browser preview · lightweight local synthesizer', None
+    return None, 'Audio preview could not be created.', None
 
 
 def render_player() -> None:
@@ -426,7 +517,12 @@ def render_player() -> None:
         if result:
             midi_path = Path(str(result["midi_path"]))
             if midi_path.exists():
-                preview_bytes, preview_status = get_audio_preview(midi_path, float(result["settings"].get("tempo", 100)))
+                preview_bytes, preview_status, preview_path = get_audio_preview(
+                    midi_path, float(result["settings"].get("tempo", 100))
+                )
+                if preview_path and result.get("audio_preview_path") != str(preview_path):
+                    result["audio_preview_path"] = str(preview_path)
+                    save_persistent_history(st.session_state.generation_history)
                 if preview_bytes:
                     st.markdown("<div class='listen-label'>LISTEN TO YOUR COMPOSITION · PLAY / PAUSE</div>", unsafe_allow_html=True)
                     st.audio(preview_bytes, format="audio/wav")
@@ -447,36 +543,104 @@ def render_player() -> None:
             if result.get("evaluation_error"):
                 st.warning("MIDI export succeeded, but analysis was unavailable for this composition.")
 
-    render_recent_compositions()
+    render_composition_library()
 
 
-def render_recent_compositions() -> None:
-    """Restore one persisted composition without running the model again."""
+def render_composition_library() -> None:
+    """Show persisted compositions and keep the selected one in the player."""
     history = [item for item in st.session_state.generation_history if "midi_path" in item]
     if not history:
         return
 
-    paths = [str(item["midi_path"]) for item in history]
-    labels = {
-        str(item["midi_path"]): (
-            f"{Path(str(item['midi_path'])).name} · {item['settings']['length']} events"
+    with st.container(border=True):
+        st.markdown("<div class='card-title'>COMPOSITION LIBRARY</div>", unsafe_allow_html=True)
+        library_filter = st.radio(
+            "Show",
+            ["All", "Favorites"],
+            horizontal=True,
+            label_visibility="collapsed",
+            key="composition_library_filter",
         )
-        for item in history
-    }
-    current_path = str(st.session_state.latest_midi_path or paths[0])
-    selected_path = st.selectbox(
-        "Recent Compositions",
-        paths,
-        index=paths.index(current_path) if current_path in paths else 0,
-        format_func=lambda path: labels[path],
-    )
-    if selected_path != current_path:
-        selected = next(item for item in history if str(item["midi_path"]) == selected_path)
-        st.session_state.latest_result = selected
-        st.session_state.latest_midi_path = selected["midi_path"]
-        st.session_state.latest_settings = selected["settings"]
-        st.session_state.latest_metrics = selected.get("metrics")
-        st.rerun()
+        visible_history = [item for item in history if library_filter == "All" or item.get("favorite")]
+        if not visible_history:
+            st.caption("No favorite compositions yet.")
+            return
+
+        identifiers = [str(item["id"]) for item in visible_history]
+        labels = {
+            str(item["id"]): (
+                f"{'★ ' if item.get('favorite') else ''}{item.get('display_name', 'Neural Composition')}"
+                f" · {item['settings']['length']} events"
+            )
+            for item in visible_history
+        }
+        current_id = str((st.session_state.latest_result or {}).get("id", identifiers[0]))
+        selected_id = st.selectbox(
+            "Composition Library",
+            identifiers,
+            index=identifiers.index(current_id) if current_id in identifiers else 0,
+            format_func=lambda identifier: labels[identifier],
+            key="composition_library_selection",
+        )
+        selected = next(item for item in history if str(item["id"]) == selected_id)
+        if selected_id != current_id:
+            set_selected_composition(selected)
+            st.rerun()
+
+        st.caption("The selected composition is ready to play in the player above.")
+        name_column, save_column = st.columns([3, 1])
+        with name_column:
+            new_name = st.text_input(
+                "Name",
+                value=str(selected.get("display_name", "Neural Composition")),
+                key=f"rename_{selected_id}",
+                label_visibility="collapsed",
+            )
+        with save_column:
+            rename_clicked = st.button("Save name", key=f"save_name_{selected_id}", use_container_width=True)
+
+        favorite_column, delete_column = st.columns(2)
+        with favorite_column:
+            favorite_label = "★ Unfavorite" if selected.get("favorite") else "☆ Favorite"
+            favorite_clicked = st.button(favorite_label, key=f"favorite_{selected_id}", use_container_width=True)
+        with delete_column:
+            delete_clicked = st.button("Delete", key=f"delete_{selected_id}", use_container_width=True)
+
+        if rename_clicked:
+            clean_name = new_name.strip()
+            if clean_name:
+                selected["display_name"] = clean_name
+                save_persistent_history(history)
+                st.rerun()
+            st.warning("Enter a composition name before saving.")
+
+        if favorite_clicked:
+            selected["favorite"] = not bool(selected.get("favorite"))
+            save_persistent_history(history)
+            st.rerun()
+
+        if delete_clicked:
+            st.session_state.delete_confirmation_id = selected_id
+            st.rerun()
+
+        if st.session_state.delete_confirmation_id == selected_id:
+            st.warning(f"Delete {selected.get('display_name', 'this composition')} and its generated files?")
+            confirm_column, cancel_column = st.columns(2)
+            with confirm_column:
+                confirm_delete = st.button("Delete permanently", key=f"confirm_delete_{selected_id}", type="primary", use_container_width=True)
+            with cancel_column:
+                cancel_delete = st.button("Cancel", key=f"cancel_delete_{selected_id}", use_container_width=True)
+            if confirm_delete:
+                delete_composition_artifacts(selected)
+                remaining_history = [item for item in history if str(item["id"]) != selected_id]
+                st.session_state.generation_history = remaining_history
+                set_selected_composition(remaining_history[0] if remaining_history else None)
+                st.session_state.delete_confirmation_id = None
+                save_persistent_history(remaining_history)
+                st.rerun()
+            if cancel_delete:
+                st.session_state.delete_confirmation_id = None
+                st.rerun()
 
 
 def render_distribution_chart(labels: list[str], values: list[int], title: str, color: str) -> None:
