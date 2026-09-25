@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
 import streamlit.components.v1 as components
-from music21 import chord, converter, note
+from music21 import chord, converter, note, tempo
 
 from src.audio_preview import render_midi_preview
 from src.evaluate import PITCH_CLASS_NAMES, analyze_midi
@@ -31,6 +31,7 @@ GENRE = "classical"
 HISTORY_PATH = OUTPUTS_DIR / "history.json"
 HISTORY_LIMIT = 10
 TEMPERATURE_PRESETS = (("Focused", 0.6), ("Balanced", 1.0), ("Experimental", 1.4))
+TRAINING_METADATA_PATH = MODELS_DIR / f"{GENRE}_training_metadata.json"
 
 
 def apply_theme() -> None:
@@ -508,6 +509,15 @@ def get_audio_preview(midi_path: Path, tempo_bpm: float) -> tuple[bytes | None, 
     return None, 'Audio preview could not be created.', None
 
 
+def audio_preview_label(audio_preview: bytes | None, status: str) -> str:
+    """Summarize the active preview renderer without exposing implementation details."""
+    if not audio_preview:
+        return "Audio preview unavailable"
+    if "FluidSynth" in status:
+        return "Audio: High-quality SoundFont"
+    return "Audio: Basic local preview"
+
+
 def render_player() -> None:
     """Render the result card, download action, and small session history."""
     result = st.session_state.latest_result
@@ -524,7 +534,10 @@ def render_player() -> None:
                     result["audio_preview_path"] = str(preview_path)
                     save_persistent_history(st.session_state.generation_history)
                 if preview_bytes:
-                    st.markdown("<div class='listen-label'>LISTEN TO YOUR COMPOSITION · PLAY / PAUSE</div>", unsafe_allow_html=True)
+                    st.markdown(
+                        "<div class='listen-label'>LISTEN TO YOUR COMPOSITION · PLAY / PAUSE</div>",
+                        unsafe_allow_html=True,
+                    )
                     st.audio(preview_bytes, format="audio/wav")
                     st.caption(preview_status)
                 else:
@@ -643,17 +656,8 @@ def render_composition_library() -> None:
                 st.rerun()
 
 
-def render_distribution_chart(labels: list[str], values: list[int], title: str, color: str) -> None:
-    """Render a chart that opens in the browser fullscreen view when clicked."""
-    figure, axis = plt.subplots(figsize=(8, 2.15))
-    figure.patch.set_facecolor("#0D1418")
-    axis.set_facecolor("#0D1418")
-    axis.bar(labels, values, color=color, edgecolor="#B6F3ED", linewidth=0.35)
-    axis.set_title(title, color="#F8FAFC", loc="left", fontsize=10, pad=8)
-    axis.tick_params(colors="#CBD5E1", labelsize=8)
-    axis.spines[["top", "right"]].set_visible(False)
-    axis.spines[["left", "bottom"]].set_color("#475569")
-    axis.grid(axis="y", color="#334155", alpha=.35)
+def render_expandable_figure(figure: object, title: str, height: int = 540) -> None:
+    """Render a Matplotlib figure that opens in browser fullscreen when clicked."""
     image_buffer = BytesIO()
     figure.savefig(image_buffer, format="png", dpi=140, bbox_inches="tight", facecolor=figure.get_facecolor())
     plt.close(figure)
@@ -699,9 +703,282 @@ def render_distribution_chart(labels: list[str], values: list[int], title: str, 
             }});
         </script>
         """,
-        height=540,
+        height=height,
         scrolling=False,
     )
+
+
+def render_distribution_chart(labels: list[str], values: list[int], title: str, color: str) -> None:
+    """Render a compact distribution chart using the shared fullscreen behavior."""
+    figure, axis = plt.subplots(figsize=(8, 2.15))
+    figure.patch.set_facecolor("#0D1418")
+    axis.set_facecolor("#0D1418")
+    axis.bar(labels, values, color=color, edgecolor="#B6F3ED", linewidth=0.35)
+    axis.set_title(title, color="#F8FAFC", loc="left", fontsize=10, pad=8)
+    axis.tick_params(colors="#CBD5E1", labelsize=8)
+    axis.spines[["top", "right"]].set_visible(False)
+    axis.spines[["left", "bottom"]].set_color("#475569")
+    axis.grid(axis="y", color="#334155", alpha=.35)
+    render_expandable_figure(figure, title)
+
+
+@st.cache_data(show_spinner=False)
+def extract_piano_timeline(midi_path_string: str, fallback_bpm: float) -> dict[str, object]:
+    """Convert selected MIDI notes and chord pitches into a cached visualizer timeline."""
+    score = converter.parse(midi_path_string)
+    tempo_marks = list(score.recurse().getElementsByClass(tempo.MetronomeMark))
+    bpm = next(
+        (float(mark.number) for mark in tempo_marks if mark.number and mark.number > 0),
+        float(fallback_bpm),
+    )
+    seconds_per_quarter = 60.0 / bpm
+    notes: list[dict[str, float | int | str]] = []
+    for element in score.flatten().notes:
+        if isinstance(element, note.Note):
+            pitches = [element.pitch]
+        elif isinstance(element, chord.Chord):
+            pitches = list(element.pitches)
+        else:
+            continue
+        offset = float(element.offset)
+        duration = max(float(element.duration.quarterLength), 0.01)
+        notes.extend(
+            {
+                "pitch": int(pitch.midi),
+                "name": pitch.nameWithOctave,
+                "start": offset * seconds_per_quarter,
+                "duration": duration * seconds_per_quarter,
+            }
+            for pitch in pitches
+        )
+    total_duration = max((float(item["start"]) + float(item["duration"]) for item in notes), default=0.0)
+    return {"notes": notes, "duration": total_duration, "bpm": bpm}
+
+
+def render_piano_visualizer(
+    midi_path: Path, fallback_bpm: float, audio_preview: bytes | None, audio_status: str
+) -> None:
+    """Render a client-side Synthesia-inspired view synchronized to the WAV preview."""
+    try:
+        timeline = extract_piano_timeline(str(midi_path), fallback_bpm)
+    except Exception:
+        st.warning("Piano Visualizer is unavailable because this MIDI file could not be parsed.")
+        return
+
+    notes = timeline["notes"]
+    if not isinstance(notes, list) or not notes:
+        st.caption("No playable notes were found in this MIDI file.")
+        return
+    pitches = [int(item["pitch"]) for item in notes]
+    lowest_key = max(0, min(pitches) - 3)
+    highest_key = min(127, max(pitches) + 3)
+    while highest_key - lowest_key < 12 and (lowest_key > 0 or highest_key < 127):
+        lowest_key = max(0, lowest_key - 1)
+        highest_key = min(127, highest_key + 1)
+
+    audio_source = (
+        json.dumps(f"data:audio/wav;base64,{base64.b64encode(audio_preview).decode('ascii')}")
+        if audio_preview
+        else "null"
+    )
+    component_html = """
+    <style>
+      html, body { margin: 0; background: transparent; font-family: Inter, system-ui, sans-serif; }
+      .visualizer { height: 480px; box-sizing: border-box; padding: 12px; border: 1px solid rgba(148,163,184,.14); border-radius: 16px; background: linear-gradient(145deg, #111B20, #0D1418); color: #F8FAFC; overflow: hidden; }
+      .topline { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; color: #94A3B8; }
+      .status { color: #99F6E4; font-weight: 700; }
+      .lane { position: relative; height: 275px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(45,212,191,.14); border-radius: 12px 12px 0 0; background: radial-gradient(circle at 50% 0%, rgba(56,189,248,.12), transparent 44%), #070B0F; }
+      .lane::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: #2DD4BF; box-shadow: 0 0 14px rgba(45,212,191,.7); }
+      .fall-note { position: absolute; min-width: 5px; border-radius: 5px 5px 2px 2px; background: linear-gradient(180deg, #7DD3FC, #14B8A6); box-shadow: 0 0 10px rgba(45,212,191,.34); opacity: .68; will-change: transform, opacity; }
+      .fall-note.active { opacity: 1; background: linear-gradient(180deg, #E0F2FE, #2DD4BF); box-shadow: 0 0 18px rgba(45,212,191,.9); }
+      .keyboard { position: relative; height: 72px; display: flex; overflow: hidden; border: 1px solid rgba(148,163,184,.2); border-top: 0; border-radius: 0 0 12px 12px; background: #0A1115; }
+      .key { position: absolute; bottom: 0; box-sizing: border-box; user-select: none; transition: background .06s ease, box-shadow .06s ease; }
+      .white-key { height: 72px; background: #E2E8F0; border: 1px solid #94A3B8; border-radius: 0 0 4px 4px; }
+      .black-key { z-index: 3; height: 44px; background: #0B1115; border: 1px solid #334155; border-radius: 0 0 4px 4px; }
+      .key.active.white-key { background: #5EEAD4; box-shadow: inset 0 -4px 0 #14B8A6, 0 0 12px rgba(45,212,191,.78); }
+      .key.active.black-key { background: #38BDF8; box-shadow: 0 0 13px rgba(56,189,248,.82); }
+      .key-label { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); color: #334155; font-size: 9px; font-weight: 800; }
+      .controls { display: flex; align-items: center; gap: 7px; margin-top: 10px; }
+      button { border: 1px solid rgba(45,212,191,.3); border-radius: 8px; padding: 6px 9px; background: #111B20; color: #F8FAFC; font-weight: 700; cursor: pointer; }
+      button:hover:not(:disabled) { background: #143B3D; } button:disabled { cursor: not-allowed; opacity: .45; }
+      .progress { flex: 1; height: 5px; overflow: hidden; border-radius: 99px; background: #26333B; }
+      .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #14B8A6, #38BDF8); }
+      .time { min-width: 72px; text-align: right; color: #CBD5E1; font-variant-numeric: tabular-nums; font-size: 12px; }
+    </style>
+    <div class="visualizer">
+      <div class="topline"><span class="status" id="status"></span><span id="tempo"></span></div>
+      <div class="lane" id="lane"></div>
+      <div class="keyboard" id="keyboard"></div>
+      <div class="controls"><button id="play-toggle">▶ Play</button><button id="restart">↺ Restart</button><div class="progress"><div class="progress-fill" id="progress"></div></div><span class="time" id="time"></span></div>
+      <audio id="audio" preload="metadata"></audio>
+    </div>
+    <script>
+      const timeline = TIMELINE_DATA;
+      let audioSource = AUDIO_SOURCE;
+      const notes = timeline.notes;
+      const duration = Math.max(Number(timeline.duration) || 0, .1);
+      const low = KEY_LOW, high = KEY_HIGH;
+      const blackClasses = new Set([1, 3, 6, 8, 10]);
+      const lane = document.getElementById('lane'), keyboard = document.getElementById('keyboard');
+      const audio = document.getElementById('audio'), status = document.getElementById('status');
+      const playButton = document.getElementById('play-toggle');
+      const restartButton = document.getElementById('restart'), progress = document.getElementById('progress');
+      const timeLabel = document.getElementById('time');
+      document.getElementById('tempo').textContent = `${Math.round(timeline.bpm)} BPM`;
+      if (audioSource) audio.src = audioSource;
+      status.textContent = audioSource ? AUDIO_LABEL : 'Audio preview unavailable — visualization only';
+      const whitePitches = []; for (let p = low; p <= high; p++) if (!blackClasses.has(p % 12)) whitePitches.push(p);
+      const whiteWidth = 100 / whitePitches.length, centers = {}, keyNodes = {};
+      let whiteIndex = 0;
+      for (let pitch = low; pitch <= high; pitch++) {
+        const key = document.createElement('div'); const isBlack = blackClasses.has(pitch % 12);
+        key.className = `key ${isBlack ? 'black-key' : 'white-key'}`; key.dataset.pitch = pitch;
+        if (isBlack) { key.style.width = `${whiteWidth * .62}%`; key.style.left = `${whiteIndex * whiteWidth - whiteWidth * .31}%`; centers[pitch] = whiteIndex * whiteWidth; }
+        else { key.style.width = `${whiteWidth}%`; key.style.left = `${whiteIndex * whiteWidth}%`; centers[pitch] = (whiteIndex + .5) * whiteWidth; if (pitch % 12 === 0) { const label = document.createElement('span'); label.className = 'key-label'; label.textContent = `C${Math.floor(pitch / 12) - 1}`; key.appendChild(label); } whiteIndex++; }
+        keyboard.appendChild(key); keyNodes[pitch] = key;
+      }
+      const bars = notes.map(note => { const bar = document.createElement('div'); bar.className = 'fall-note'; lane.appendChild(bar); return { note, bar }; });
+      let frameId = null, visualTime = 0, visualStartedAt = 0, visualPlaying = false;
+      const formatTime = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
+      const currentTime = now => audioSource ? audio.currentTime : (visualPlaying ? Math.min(duration, visualTime + (now - visualStartedAt) / 1000) : visualTime);
+      const render = now => {
+        const current = currentTime(now); const lookAhead = 3.4; const laneHeight = lane.clientHeight - 4; const scale = laneHeight / lookAhead;
+        const active = new Set();
+        bars.forEach(({ note, bar }) => {
+          const until = Number(note.start) - current, noteDuration = Number(note.duration);
+          if (until > lookAhead || until + noteDuration < 0 || centers[note.pitch] === undefined) { bar.style.display = 'none'; return; }
+          const height = Math.max(8, noteDuration * scale); const y = Math.min(laneHeight - height, (lookAhead - until) * scale - height);
+          bar.style.display = 'block'; bar.style.left = `${centers[note.pitch]}%`; bar.style.width = `${Math.max(5, whiteWidth * .66)}%`; bar.style.height = `${height}px`; bar.style.transform = `translate(-50%, ${y}px)`;
+          const isActive = current >= Number(note.start) && current < Number(note.start) + noteDuration;
+          bar.classList.toggle('active', isActive); if (isActive) active.add(note.pitch);
+        });
+        Object.entries(keyNodes).forEach(([pitch, key]) => key.classList.toggle('active', active.has(Number(pitch))));
+        progress.style.width = `${Math.min(100, current / duration * 100)}%`; timeLabel.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
+        if ((audioSource && !audio.paused && !audio.ended) || (!audioSource && visualPlaying && current < duration)) frameId = requestAnimationFrame(render);
+        else if (!audioSource) { visualTime = current; visualPlaying = false; }
+      };
+      const updatePlayButton = playing => { playButton.textContent = playing ? '⏸ Pause' : '▶ Play'; };
+      const start = () => {
+        if (audioSource) audio.play().catch(() => { status.textContent = 'Audio playback was blocked — visualization only'; audioSource = null; visualStartedAt = performance.now(); visualPlaying = true; updatePlayButton(true); frameId = requestAnimationFrame(render); });
+        else { visualStartedAt = performance.now(); visualPlaying = true; updatePlayButton(true); frameId = requestAnimationFrame(render); }
+      };
+      const pause = () => { if (audioSource) audio.pause(); else { visualTime = currentTime(performance.now()); visualPlaying = false; updatePlayButton(false); } cancelAnimationFrame(frameId); render(performance.now()); };
+      const restart = () => { if (audioSource) { audio.currentTime = 0; } visualTime = 0; visualStartedAt = performance.now(); if (!audioSource || !audio.paused) { visualPlaying = true; cancelAnimationFrame(frameId); frameId = requestAnimationFrame(render); } else render(performance.now()); };
+      playButton.onclick = () => { if ((audioSource && !audio.paused) || (!audioSource && visualPlaying)) pause(); else start(); };
+      restartButton.onclick = restart;
+      if (audioSource) { audio.onplay = () => { updatePlayButton(true); cancelAnimationFrame(frameId); frameId = requestAnimationFrame(render); }; audio.onpause = () => { updatePlayButton(false); cancelAnimationFrame(frameId); render(performance.now()); }; audio.onended = () => { updatePlayButton(false); cancelAnimationFrame(frameId); render(performance.now()); }; }
+      else updatePlayButton(false);
+      render(performance.now());
+    </script>
+    """
+    component_html = (
+        component_html.replace("TIMELINE_DATA", json.dumps(timeline))
+        .replace("AUDIO_SOURCE", audio_source)
+        .replace("KEY_LOW", str(lowest_key))
+        .replace("KEY_HIGH", str(highest_key))
+        .replace("AUDIO_LABEL", json.dumps(audio_status))
+    )
+    components.html(component_html, height=500, scrolling=False)
+
+
+@st.cache_data(show_spinner=False)
+def load_training_insights() -> dict[str, object]:
+    """Read existing processing and training metadata without loading or retraining a model."""
+    insights: dict[str, object] = {
+        "dataset": "Unavailable",
+        "midi_files": None,
+        "musical_events": None,
+        "training_sequences": None,
+        "vocabulary_size": None,
+        "sequence_length": None,
+        "parameter_count": None,
+        "model": {},
+        "history": None,
+    }
+    preprocessed_path = PROCESSED_DATA_DIR / f"{GENRE}_preprocessed.json"
+    try:
+        preprocessed = json.loads(preprocessed_path.read_text(encoding="utf-8"))
+        metadata = preprocessed.get("metadata", {})
+        insights["dataset"] = f"MAESTRO {metadata.get('genre', GENRE)} piano MIDI"
+        insights["midi_files"] = metadata.get("source_midi_files")
+        insights["musical_events"] = len(preprocessed.get("events", []))
+        insights["vocabulary_size"] = len(preprocessed.get("id_to_event", []))
+        insights["sequence_length"] = metadata.get("sequence_length")
+    except (OSError, json.JSONDecodeError, TypeError):
+        pass
+
+    try:
+        training_metadata = json.loads(TRAINING_METADATA_PATH.read_text(encoding="utf-8"))
+        training_examples = training_metadata.get("training_examples")
+        validation_examples = training_metadata.get("validation_examples")
+        if isinstance(training_examples, int) and isinstance(validation_examples, int):
+            insights["training_sequences"] = training_examples + validation_examples
+        insights["vocabulary_size"] = training_metadata.get("vocabulary_size", insights["vocabulary_size"])
+        insights["sequence_length"] = training_metadata.get("sequence_length", insights["sequence_length"])
+        insights["parameter_count"] = training_metadata.get("parameter_count")
+        insights["model"] = training_metadata.get("model", {})
+        history = training_metadata.get("history")
+        if isinstance(history, dict) and history.get("loss") and history.get("val_loss"):
+            insights["history"] = history
+    except (OSError, json.JSONDecodeError, TypeError):
+        pass
+    return insights
+
+
+def insight_value(value: object) -> str:
+    """Format a metadata value without inventing unavailable values."""
+    if isinstance(value, int):
+        return f"{value:,}"
+    return str(value) if value is not None else "Unavailable"
+
+
+def render_training_insights() -> None:
+    """Display real project metadata and any saved per-epoch loss history."""
+    insights = load_training_insights()
+    first_row = st.columns(3)
+    first_row[0].metric("MIDI files", insight_value(insights["midi_files"]))
+    first_row[1].metric("Musical events", insight_value(insights["musical_events"]))
+    first_row[2].metric("Training sequences", insight_value(insights["training_sequences"]))
+    second_row = st.columns(3)
+    second_row[0].metric("Vocabulary", insight_value(insights["vocabulary_size"]))
+    second_row[1].metric("Sequence length", insight_value(insights["sequence_length"]))
+    second_row[2].metric("Parameters", insight_value(insights["parameter_count"]))
+    st.caption(f"Dataset: {insights['dataset']}")
+
+    model = insights["model"] if isinstance(insights["model"], dict) else {}
+    embedding = insight_value(model.get("embedding_dimension"))
+    lstm_units = insight_value(model.get("lstm_units"))
+    dropout = insight_value(model.get("dropout_rate"))
+    sequence_length = insight_value(insights["sequence_length"])
+    st.markdown(
+        f"**Model:** Embedding({embedding}) → LSTM({lstm_units}) → Dropout({dropout}) → Dense/Softmax"
+    )
+    st.markdown(
+        f"**Pipeline:** {sequence_length}-event sequence → Embedding → LSTM → Dropout → Softmax → Next-event probabilities"
+    )
+
+    history = insights.get("history")
+    if not isinstance(history, dict):
+        st.caption("Detailed epoch history was not stored for this trained model.")
+        return
+    losses = history.get("loss", [])
+    validation_losses = history.get("val_loss", [])
+    if not isinstance(losses, list) or not isinstance(validation_losses, list):
+        st.caption("Detailed epoch history was not stored for this trained model.")
+        return
+    figure, axis = plt.subplots(figsize=(8, 2.15))
+    figure.patch.set_facecolor("#0D1418")
+    axis.set_facecolor("#0D1418")
+    epochs = range(1, min(len(losses), len(validation_losses)) + 1)
+    axis.plot(epochs, losses[:len(epochs)], color="#14B8A6", label="Training loss")
+    axis.plot(epochs, validation_losses[:len(epochs)], color="#38BDF8", label="Validation loss")
+    axis.set_title("Training vs validation loss", color="#F8FAFC", loc="left", fontsize=10, pad=8)
+    axis.tick_params(colors="#CBD5E1", labelsize=8)
+    axis.legend(facecolor="#111B20", edgecolor="#475569", labelcolor="#F8FAFC", fontsize=8)
+    axis.spines[["top", "right"]].set_visible(False)
+    axis.spines[["left", "bottom"]].set_color("#475569")
+    axis.grid(axis="y", color="#334155", alpha=.35)
+    render_expandable_figure(figure, "Training vs validation loss")
 
 
 def render_analysis() -> None:
@@ -710,8 +987,8 @@ def render_analysis() -> None:
     metrics = result.get("metrics") if result else None
     with st.container(border=True):
         st.markdown("<div class='analysis-title'>COMPOSITION ANALYSIS</div>", unsafe_allow_html=True)
-        overview_tab, pitch_tab, rhythm_tab, model_tab = st.tabs(
-            ["Overview", "Pitch Analysis", "Rhythm", "About the Model"]
+        overview_tab, piano_visualizer_tab, pitch_tab, rhythm_tab, insights_tab, model_tab = st.tabs(
+            ["Overview", "Piano Visualizer", "Pitch Analysis", "Rhythm", "Training Insights", "About the Model"]
         )
         with overview_tab:
             if metrics:
@@ -722,6 +999,23 @@ def render_analysis() -> None:
                 fourth.metric("Range", f"{metrics['lowest_pitch']}–{metrics['highest_pitch']}")
             else:
                 st.caption("Generate a composition to inspect note, chord, duration, and pitch-range metrics.")
+        with piano_visualizer_tab:
+            midi_path = Path(str(result["midi_path"])) if result else None
+            if midi_path and midi_path.is_file():
+                preview_bytes, preview_status, preview_path = get_audio_preview(
+                    midi_path, float(result["settings"].get("tempo", 100))
+                )
+                if preview_path and result.get("audio_preview_path") != str(preview_path):
+                    result["audio_preview_path"] = str(preview_path)
+                    save_persistent_history(st.session_state.generation_history)
+                render_piano_visualizer(
+                    midi_path,
+                    float(result["settings"].get("tempo", 100)),
+                    preview_bytes,
+                    audio_preview_label(preview_bytes, preview_status),
+                )
+            else:
+                st.caption("Generate or select a composition to use Piano Visualizer.")
         with pitch_tab:
             if metrics:
                 distribution = metrics["pitch_class_distribution"]
@@ -745,6 +1039,8 @@ def render_analysis() -> None:
                 )
             else:
                 st.caption("Rhythm analysis appears after generation.")
+        with insights_tab:
+            render_training_insights()
         with model_tab:
             st.markdown(
                 "**MAESTRO MIDI** → **50-event sequence** → **Embedding** → **LSTM** → **Softmax** → **Temperature sampling** → **MIDI**"

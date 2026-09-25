@@ -93,21 +93,24 @@ streamlit run app.py
 ```
 
 The studio provides generation controls for length, temperature, seed, tempo, and
-playback-only minimum duration. It offers MIDI download plus a pitch and rhythm
-analysis dashboard for each generated composition.
+playback-only minimum duration, including Focused, Balanced, and Experimental
+temperature presets. The persistent Composition Library supports selecting, renaming,
+favoriting, and safely deleting generated compositions. Its analysis dashboard includes
+a piano roll, pitch and rhythm charts, and training insights.
 
 ### Local audio preview
 
-NeuraTune now creates a basic local WAV preview automatically, so the composition card
-has browser-native play/pause controls without any extra installation. For a higher
-quality piano preview, install **FluidSynth** and provide a General MIDI `.sf2`
-soundfont. Make the `fluidsynth` command available on your `PATH`, then set the
-soundfont path before starting Streamlit:
+NeuraTune creates a basic local WAV preview automatically, so the composition card has
+browser-native play/pause controls without any extra installation. For an optional
+higher-quality piano preview, install **FluidSynth** and provide a General MIDI `.sf2`
+soundfont. Configure both paths before starting Streamlit:
 
 ```powershell
-$env:NEURATUNE_SOUNDFONT = "C:\path\to\your\soundfont.sf2"
+$env:FLUIDSYNTH_PATH = "C:\path\to\fluidsynth.exe"
+$env:SOUNDFONT_PATH = "C:\path\to\your\soundfont.sf2"
 streamlit run app.py
 ```
 
-NeuraTune does not download or bundle a soundfont; preview WAV files are cached under
-`outputs/previews/` and MIDI generation still works if preview rendering fails.
+FluidSynth and the soundfont are optional: NeuraTune falls back to the built-in local
+synthesizer when either is unavailable. It does not download or bundle a soundfont.
+Preview WAV files are cached under `outputs/previews/`.

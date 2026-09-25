@@ -63,19 +63,32 @@ def _render_basic_preview(midi_path: Path, preview_path: Path) -> tuple[Path | N
         return None, "Local audio preview could not be rendered."
 
 
+def _fluidsynth_command() -> str | None:
+    """Find an optional user-configured FluidSynth executable or PATH command."""
+    configured_path = os.environ.get("FLUIDSYNTH_PATH")
+    if configured_path:
+        configured = Path(configured_path)
+        if configured.is_file():
+            return str(configured)
+        command = shutil.which(configured_path)
+        if command:
+            return command
+    return shutil.which("fluidsynth")
+
+
 def render_midi_preview(midi_path: Path) -> tuple[Path | None, str | None]:
     """Render a cached WAV with FluidSynth or a built-in local fallback."""
     preview_directory = midi_path.parent / "previews"
-    preview_path = preview_directory / f"{midi_path.stem}.wav"
-
-    if preview_path.exists() and preview_path.stat().st_size > 0:
-        return preview_path, "Cached local audio preview"
-
-    fluidsynth = shutil.which("fluidsynth")
-    soundfont_value = os.environ.get("NEURATUNE_SOUNDFONT")
+    fluidsynth_preview = preview_directory / f"{midi_path.stem}_fluidsynth.wav"
+    basic_preview = preview_directory / f"{midi_path.stem}_basic.wav"
+    legacy_preview = preview_directory / f"{midi_path.stem}.wav"
+    fluidsynth = _fluidsynth_command()
+    soundfont_value = os.environ.get("SOUNDFONT_PATH") or os.environ.get("NEURATUNE_SOUNDFONT")
     soundfont_path = Path(soundfont_value) if soundfont_value else None
 
     if fluidsynth and soundfont_path is not None and soundfont_path.is_file():
+        if fluidsynth_preview.exists() and fluidsynth_preview.stat().st_size > 0:
+            return fluidsynth_preview, "Cached FluidSynth piano preview"
         preview_directory.mkdir(parents=True, exist_ok=True)
         try:
             subprocess.run(
@@ -85,7 +98,7 @@ def render_midi_preview(midi_path: Path) -> tuple[Path | None, str | None]:
                     str(soundfont_path),
                     str(midi_path),
                     "-F",
-                    str(preview_path),
+                    str(fluidsynth_preview),
                     "-r",
                     "44100",
                 ],
@@ -97,7 +110,11 @@ def render_midi_preview(midi_path: Path) -> tuple[Path | None, str | None]:
         except (OSError, subprocess.SubprocessError):
             pass
         else:
-            if preview_path.exists() and preview_path.stat().st_size > 0:
-                return preview_path, "FluidSynth piano preview"
+            if fluidsynth_preview.exists() and fluidsynth_preview.stat().st_size > 0:
+                return fluidsynth_preview, "FluidSynth piano preview"
 
-    return _render_basic_preview(midi_path, preview_path)
+    if basic_preview.exists() and basic_preview.stat().st_size > 0:
+        return basic_preview, "Cached basic local MIDI preview"
+    if legacy_preview.exists() and legacy_preview.stat().st_size > 0:
+        return legacy_preview, "Cached basic local MIDI preview"
+    return _render_basic_preview(midi_path, basic_preview)

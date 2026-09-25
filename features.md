@@ -27,6 +27,7 @@
 
 - Modern responsive dark music-studio interface with a compact two-column desktop layout.
 - Generation controls for event length, creativity/temperature, random seed, tempo, and minimum duration.
+- Focused (`0.6`), Balanced (`1.0`), and Experimental (`1.4`) temperature presets, alongside the manual slider.
 - Cached model loading so widget interactions do not reload the Keras model.
 - A composition card with generated-event, creativity, tempo, pitch, pitch-range, seed, and duration details.
 - MIDI download for every generated composition.
@@ -34,10 +35,13 @@
   - A cached WAV preview is rendered locally.
   - A built-in basic synthesizer is used when FluidSynth is unavailable.
   - Optional FluidSynth plus a user-provided General MIDI soundfont can provide a higher quality preview.
-- Persistent recent-composition history in `outputs/history.json`.
-- Restores the newest valid composition after refresh and lets users select earlier generated MIDI files without regenerating them.
+  - Set `FLUIDSYNTH_PATH` and `SOUNDFONT_PATH` to enable the optional FluidSynth path; no soundfont is downloaded automatically.
+- Persistent Composition Library in `outputs/history.json`.
+- Restores the newest valid composition after refresh and lets users select, rename, favorite, or safely delete earlier generated MIDI files without regenerating them.
 - Loading overlay while the neural network is composing.
-- Overview, pitch-class, rhythm, and model-explanation analysis tabs.
+- Overview, actual-MIDI piano roll, pitch-class, rhythm, training-insights, and model-explanation analysis tabs.
+- Piano-roll rectangles show each generated note and chord pitch at its real MIDI offset and duration.
+- Training Insights reads the saved preprocessing and training metadata, and only plots per-epoch loss when that history was saved.
 - Pitch and rhythm charts have no visible toolbar button: click a chart to open it in browser fullscreen mode; click again or exit fullscreen to return.
 - Responsive behavior stacks the studio controls and composition card on narrower screens.
 
