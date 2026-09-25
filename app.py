@@ -756,8 +756,19 @@ def extract_piano_timeline(midi_path_string: str, fallback_bpm: float) -> dict[s
             }
             for pitch in pitches
         )
-    total_duration = max((float(item["start"]) + float(item["duration"]) for item in notes), default=0.0)
-    return {"notes": notes, "duration": total_duration, "bpm": bpm}
+    notes.sort(key=lambda item: (int(item["pitch"]), float(item["start"])))
+    merged_notes: list[dict[str, float | int | str]] = []
+    for item in notes:
+        if merged_notes:
+            previous = merged_notes[-1]
+            previous_end = float(previous["start"]) + float(previous["duration"])
+            if int(previous["pitch"]) == int(item["pitch"]) and float(item["start"]) <= previous_end:
+                previous["duration"] = max(previous_end, float(item["start"]) + float(item["duration"])) - float(previous["start"])
+                continue
+        merged_notes.append(item)
+    merged_notes.sort(key=lambda item: (float(item["start"]), int(item["pitch"])))
+    total_duration = max((float(item["start"]) + float(item["duration"]) for item in merged_notes), default=0.0)
+    return {"notes": merged_notes, "duration": total_duration, "bpm": bpm}
 
 
 def render_piano_visualizer_player(
@@ -796,10 +807,10 @@ def render_piano_visualizer_player(
       .modal { display: none; position: fixed; inset: 0; z-index: 2; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; background: rgba(3,7,10,.86); backdrop-filter: blur(10px); }
       .modal.open { display: flex; } .modal-card { width: min(1060px, 96vw); padding: 14px; border: 1px solid rgba(45,212,191,.3); border-radius: 18px; background: #0D1418; box-shadow: 0 28px 80px rgba(0,0,0,.55); }
       .modal-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 9px; color: #99F6E4; font-size: 12px; font-weight: 800; letter-spacing: .1em; }
-      .visualizer { height: 480px; box-sizing: border-box; padding: 12px; border: 1px solid rgba(148,163,184,.14); border-radius: 16px; background: linear-gradient(145deg, #111B20, #0D1418); color: #F8FAFC; overflow: hidden; }
+      .visualizer { height: 500px; box-sizing: border-box; padding: 12px; border: 1px solid rgba(148,163,184,.14); border-radius: 16px; background: linear-gradient(145deg, #111B20, #0D1418); color: #F8FAFC; overflow: hidden; }
       .topline { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; color: #94A3B8; }
       .status { color: #99F6E4; font-weight: 700; }
-      .lane { position: relative; height: 275px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(45,212,191,.14); border-radius: 12px 12px 0 0; background: radial-gradient(circle at 50% 0%, rgba(56,189,248,.12), transparent 44%), #070B0F; }
+      .lane { position: relative; height: 330px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(45,212,191,.14); border-radius: 12px 12px 0 0; background: radial-gradient(circle at 50% 0%, rgba(56,189,248,.12), transparent 44%), #070B0F; }
       .lane::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: #2DD4BF; box-shadow: 0 0 14px rgba(45,212,191,.7); }
       .fall-note { position: absolute; min-width: 5px; border-radius: 5px 5px 2px 2px; background: linear-gradient(180deg, #7DD3FC, #14B8A6); box-shadow: 0 0 10px rgba(45,212,191,.34); opacity: .68; will-change: transform, opacity; }
       .fall-note.active { opacity: 1; background: linear-gradient(180deg, #E0F2FE, #2DD4BF); box-shadow: 0 0 18px rgba(45,212,191,.9); }
