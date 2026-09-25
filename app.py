@@ -795,7 +795,7 @@ def render_piano_visualizer_player(
       .mini-time { min-width: 74px; color: #CBD5E1; font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
       .modal { display: none; position: fixed; inset: 0; z-index: 2; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; background: rgba(3,7,10,.86); backdrop-filter: blur(10px); }
       .modal.open { display: flex; } .modal-card { width: min(1060px, 96vw); padding: 14px; border: 1px solid rgba(45,212,191,.3); border-radius: 18px; background: #0D1418; box-shadow: 0 28px 80px rgba(0,0,0,.55); }
-      .modal-title { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 9px; color: #99F6E4; font-size: 12px; font-weight: 800; letter-spacing: .1em; }
+      .modal-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 9px; color: #99F6E4; font-size: 12px; font-weight: 800; letter-spacing: .1em; }
       .visualizer { height: 480px; box-sizing: border-box; padding: 12px; border: 1px solid rgba(148,163,184,.14); border-radius: 16px; background: linear-gradient(145deg, #111B20, #0D1418); color: #F8FAFC; overflow: hidden; }
       .topline { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; color: #94A3B8; }
       .status { color: #99F6E4; font-weight: 700; }
@@ -811,7 +811,7 @@ def render_piano_visualizer_player(
       .key.active.black-key { background: #38BDF8; box-shadow: 0 0 13px rgba(56,189,248,.82); }
       .key-label { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); color: #334155; font-size: 9px; font-weight: 800; }
       .controls { display: flex; align-items: center; gap: 7px; margin-top: 10px; }
-      .close-action { margin-left: auto; border-color: rgba(248,250,252,.18); color: #CBD5E1; }
+      .close-action { border-color: rgba(248,250,252,.18); color: #CBD5E1; }
       button { border: 1px solid rgba(45,212,191,.3); border-radius: 8px; padding: 6px 9px; background: #111B20; color: #F8FAFC; font-weight: 700; cursor: pointer; }
       button:hover:not(:disabled) { background: #143B3D; } button:disabled { cursor: not-allowed; opacity: .45; }
       .progress { flex: 1; height: 5px; overflow: hidden; border-radius: 99px; background: #26333B; }
@@ -824,12 +824,12 @@ def render_piano_visualizer_player(
       <span class="mini-time" id="mini-time">0:00 / 0:00</span>
     </div>
     <div class="modal" id="modal"><div class="modal-card">
-      <div class="modal-title"><span>PIANO VISUALIZER</span><span id="modal-status"></span></div>
+      <div class="modal-title"><span>PIANO VISUALIZER</span><button id="exit" class="close-action">Exit</button></div>
     <div class="visualizer">
       <div class="topline"><span class="status" id="status"></span><span id="tempo"></span></div>
       <div class="lane" id="lane"></div>
       <div class="keyboard" id="keyboard"></div>
-      <div class="controls"><button id="play-toggle">▶ Play</button><button id="restart">↺ Restart</button><button id="minimize">Minimize</button><div class="progress"><div class="progress-fill" id="progress"></div></div><span class="time" id="time"></span><button id="exit" class="close-action">Exit</button></div>
+      <div class="controls"><button id="play-toggle">▶ Play</button><button id="restart">↺ Restart</button><button id="minimize">Minimize</button><div class="progress"><div class="progress-fill" id="progress"></div></div><span class="time" id="time"></span></div>
       <audio id="audio" preload="metadata"></audio>
     </div></div></div>
     <script>
@@ -846,18 +846,18 @@ def render_piano_visualizer_player(
       const timeLabel = document.getElementById('time');
       const miniToggle = document.getElementById('mini-toggle'), miniProgress = document.getElementById('mini-progress'), miniTime = document.getElementById('mini-time');
       const modal = document.getElementById('modal'), minimizeButton = document.getElementById('minimize'), exitButton = document.getElementById('exit');
-      const modalStatus = document.getElementById('modal-status'); let savedFrameStyle;
+      let savedFrameStyle;
       document.getElementById('tempo').textContent = `${Math.round(timeline.bpm)} BPM`;
       if (audioSource) audio.src = audioSource;
-      status.textContent = audioSource ? AUDIO_LABEL : 'Audio preview unavailable — visualization only'; modalStatus.textContent = status.textContent;
+      status.textContent = audioSource ? AUDIO_LABEL : 'Audio preview unavailable — visualization only';
       const whitePitches = []; for (let p = low; p <= high; p++) if (!blackClasses.has(p % 12)) whitePitches.push(p);
-      const whiteWidth = 100 / whitePitches.length, centers = {}, keyNodes = {};
+      const whiteWidth = 100 / whitePitches.length, centers = {}, keyNodes = {}, keyWidths = {};
       let whiteIndex = 0;
       for (let pitch = low; pitch <= high; pitch++) {
         const key = document.createElement('div'); const isBlack = blackClasses.has(pitch % 12);
         key.className = `key ${isBlack ? 'black-key' : 'white-key'}`; key.dataset.pitch = pitch;
-        if (isBlack) { key.style.width = `${whiteWidth * .62}%`; key.style.left = `${whiteIndex * whiteWidth - whiteWidth * .31}%`; centers[pitch] = whiteIndex * whiteWidth; }
-        else { key.style.width = `${whiteWidth}%`; key.style.left = `${whiteIndex * whiteWidth}%`; centers[pitch] = (whiteIndex + .5) * whiteWidth; if (pitch % 12 === 0) { const label = document.createElement('span'); label.className = 'key-label'; label.textContent = `C${Math.floor(pitch / 12) - 1}`; key.appendChild(label); } whiteIndex++; }
+        if (isBlack) { key.style.width = `${whiteWidth * .62}%`; key.style.left = `${whiteIndex * whiteWidth - whiteWidth * .31}%`; centers[pitch] = whiteIndex * whiteWidth; keyWidths[pitch] = whiteWidth * .62; }
+        else { key.style.width = `${whiteWidth}%`; key.style.left = `${whiteIndex * whiteWidth}%`; centers[pitch] = (whiteIndex + .5) * whiteWidth; keyWidths[pitch] = whiteWidth; if (pitch % 12 === 0) { const label = document.createElement('span'); label.className = 'key-label'; label.textContent = `C${Math.floor(pitch / 12) - 1}`; key.appendChild(label); } whiteIndex++; }
         keyboard.appendChild(key); keyNodes[pitch] = key;
       }
       const bars = notes.map(note => { const bar = document.createElement('div'); bar.className = 'fall-note'; lane.appendChild(bar); return { note, bar }; });
@@ -871,7 +871,7 @@ def render_piano_visualizer_player(
           const until = Number(note.start) - current, noteDuration = Number(note.duration);
           if (until > lookAhead || until + noteDuration < 0 || centers[note.pitch] === undefined) { bar.style.display = 'none'; return; }
           const height = Math.max(8, noteDuration * scale); const y = Math.min(laneHeight - height, (lookAhead - until) * scale - height);
-          bar.style.display = 'block'; bar.style.left = `${centers[note.pitch]}%`; bar.style.width = `${Math.max(5, whiteWidth * .66)}%`; bar.style.height = `${height}px`; bar.style.transform = `translate(-50%, ${y}px)`;
+          bar.style.display = 'block'; bar.style.left = `${centers[note.pitch]}%`; bar.style.width = `${keyWidths[note.pitch]}%`; bar.style.height = `${height}px`; bar.style.transform = `translate(-50%, ${y}px)`;
           const isActive = current >= Number(note.start) && current < Number(note.start) + noteDuration;
           bar.classList.toggle('active', isActive); if (isActive) active.add(note.pitch);
         });
@@ -885,7 +885,7 @@ def render_piano_visualizer_player(
       const openModal = () => { modal.classList.add('open'); setFrameExpanded(true); };
       const minimizeModal = () => { modal.classList.remove('open'); setFrameExpanded(false); };
       const start = () => {
-        if (audioSource) audio.play().catch(() => { status.textContent = 'Audio playback was blocked — visualization only'; modalStatus.textContent = status.textContent; audioSource = null; visualStartedAt = performance.now(); visualPlaying = true; updatePlayButton(true); frameId = requestAnimationFrame(render); });
+        if (audioSource) audio.play().catch(() => { status.textContent = 'Audio playback was blocked — visualization only'; audioSource = null; visualStartedAt = performance.now(); visualPlaying = true; updatePlayButton(true); frameId = requestAnimationFrame(render); });
         else { visualStartedAt = performance.now(); visualPlaying = true; updatePlayButton(true); frameId = requestAnimationFrame(render); }
       };
       const pause = () => { if (audioSource) audio.pause(); else { visualTime = currentTime(performance.now()); visualPlaying = false; updatePlayButton(false); } cancelAnimationFrame(frameId); render(performance.now()); };
