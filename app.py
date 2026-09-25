@@ -1,5 +1,6 @@
 """NeuraTune: a compact Streamlit studio for AI MIDI generation."""
 
+import base64
 import json
 import wave
 from datetime import datetime
@@ -9,6 +10,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
+import streamlit.components.v1 as components
 from music21 import chord, converter, note
 
 from src.audio_preview import render_midi_preview
@@ -81,9 +83,8 @@ def apply_theme() -> None:
         .waveform { height: 28px; display: flex; align-items: center; gap: 3px; overflow: hidden; }
         .waveform span { width: 5px; border-radius: 6px; background: linear-gradient(#2DD4BF, #38BDF8); opacity: .9; }
         .listen-label { color: #99F6E4; font-size: .69rem; font-weight: 800; letter-spacing: .10em; margin: .7rem 0 .3rem; }
-        [data-testid="stAudio"] { border: 1px solid rgba(45,212,191,.20); border-radius: 12px; background: #0B1115; overflow: hidden; }
-        [data-testid="stImage"] { position: relative; overflow: hidden; border-radius: 12px; }
-        [data-testid="stImage"] button { position: absolute !important; top: .5rem !important; right: .5rem !important; z-index: 5 !important; background: rgba(7,11,15,.82) !important; border: 1px solid var(--line) !important; border-radius: 9px !important; }
+        [data-testid="stAudio"] { border: 1px solid rgba(45,212,191,.20); border-radius: 16px !important; background: #0B1115; overflow: hidden; }
+        [data-testid="stAudio"] audio { display: block; width: 100%; border-radius: 16px !important; }
         .metric-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: .4rem; margin: .6rem 0; }
         .metric-block { padding: .48rem; border-radius: 10px; border: 1px solid rgba(255,255,255,.08); background: rgba(5,9,20,.42); }
         .metric-value { color: var(--text); font-size: 1rem; font-weight: 800; overflow-wrap: anywhere; }
@@ -479,7 +480,7 @@ def render_recent_compositions() -> None:
 
 
 def render_distribution_chart(labels: list[str], values: list[int], title: str, color: str) -> None:
-    """Render a compact chart as an image with its expand control inside the frame."""
+    """Render a chart that opens in the browser fullscreen view when clicked."""
     figure, axis = plt.subplots(figsize=(8, 2.15))
     figure.patch.set_facecolor("#0D1418")
     axis.set_facecolor("#0D1418")
@@ -492,7 +493,51 @@ def render_distribution_chart(labels: list[str], values: list[int], title: str, 
     image_buffer = BytesIO()
     figure.savefig(image_buffer, format="png", dpi=140, bbox_inches="tight", facecolor=figure.get_facecolor())
     plt.close(figure)
-    st.image(image_buffer.getvalue(), use_container_width=True)
+
+    chart_image = base64.b64encode(image_buffer.getvalue()).decode("ascii")
+    components.html(
+        f"""
+        <style>
+            html, body {{ margin: 0; background: transparent; overflow: hidden; }}
+            #chart {{
+                display: block; width: 100%; padding: 0; border: 0; border-radius: 12px;
+                background: transparent; cursor: zoom-in;
+            }}
+            #chart img {{ display: block; width: 100%; height: auto; border-radius: 12px; }}
+            #chart:focus-visible {{ outline: 2px solid #2DD4BF; outline-offset: 3px; }}
+            #chart:fullscreen {{
+                width: 100vw; height: 100vh; display: grid; place-items: center;
+                background: #070B0F; cursor: zoom-out;
+            }}
+            #chart:fullscreen img {{
+                width: min(96vw, 1500px); max-height: 94vh; object-fit: contain;
+                border-radius: 16px;
+            }}
+        </style>
+        <button id="chart" type="button" aria-label="Expand {title}">
+            <img src="data:image/png;base64,{chart_image}" alt="{title}. Click to expand." />
+        </button>
+        <script>
+            const chart = document.getElementById("chart");
+            const toggleFullscreen = () => {{
+                if (document.fullscreenElement) {{
+                    document.exitFullscreen();
+                }} else if (chart.requestFullscreen) {{
+                    chart.requestFullscreen().catch(() => {{}});
+                }}
+            }};
+            chart.addEventListener("click", toggleFullscreen);
+            chart.addEventListener("keydown", (event) => {{
+                if (event.key === "Enter" || event.key === " ") {{
+                    event.preventDefault();
+                    toggleFullscreen();
+                }}
+            }});
+        </script>
+        """,
+        height=540,
+        scrolling=False,
+    )
 
 
 def render_analysis() -> None:
