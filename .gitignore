@@ -1,6 +1,8 @@
 # Python cache
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.mypy_cache/
 
 # Virtual environments
 .venv/
@@ -22,12 +24,26 @@ models/*
 # Generated MIDI and output files
 outputs/*
 !outputs/.gitkeep
+*.wav
+*.wave
+*.tmp
+*.temp
+*.log
+
+# Streamlit runtime cache (configuration files remain trackable)
+.streamlit/cache/
 
 # Operating-system files
 .DS_Store
 Thumbs.db
 Desktop.ini
 
-# Raw MIDI datasets
-data/raw/**/*.mid
-data/raw/**/*.midi
+# Local raw datasets (preserve only folder placeholders)
+data/raw/*
+!data/raw/.gitkeep
+!data/raw/classical/
+data/raw/classical/*
+!data/raw/classical/.gitkeep
+!data/raw/jazz/
+data/raw/jazz/*
+!data/raw/jazz/.gitkeep

@@ -16,14 +16,14 @@ from music21 import chord, converter, note, tempo
 
 from src.audio_preview import render_midi_preview
 from src.evaluate import PITCH_CLASS_NAMES, analyze_midi
-from src.generate import (
+from src.generate_v2 import (
     MODELS_DIR,
     OUTPUTS_DIR,
     PROCESSED_DATA_DIR,
-    export_midi,
-    generate_event_ids,
-    load_generation_artifacts,
-    select_seed_sequence,
+    load_v2_generation_artifacts,
+    generate_v2_events,
+    reconstruct_v2_midi,
+    output_filename,
 )
 
 
@@ -31,7 +31,7 @@ GENRE = "classical"
 HISTORY_PATH = OUTPUTS_DIR / "history.json"
 HISTORY_LIMIT = 10
 TEMPERATURE_PRESETS = (("Focused", 0.6), ("Balanced", 1.0), ("Experimental", 1.4))
-TRAINING_METADATA_PATH = MODELS_DIR / f"{GENRE}_training_metadata.json"
+TRAINING_METADATA_PATH = MODELS_DIR / f"{GENRE}_training_metadata_v2.json"
 
 
 def apply_theme() -> None:
@@ -112,9 +112,9 @@ def apply_theme() -> None:
 
 
 @st.cache_resource(show_spinner=False)
-def load_model_resources() -> tuple[object, np.ndarray, list[str], int]:
-    """Cache the existing Keras model and processed event sequences."""
-    return load_generation_artifacts(GENRE)
+def load_model_resources() -> tuple[object, np.ndarray, dict[str, np.ndarray], float, int]:
+    """Cache the production V2 model, seed data, and saved mappings."""
+    return load_v2_generation_artifacts(GENRE)
 
 
 def initialize_session_state() -> None:
@@ -299,9 +299,10 @@ def model_ready() -> bool:
     return all(
         path.exists()
         for path in (
-            MODELS_DIR / f"{GENRE}_lstm.keras",
-            PROCESSED_DATA_DIR / f"{GENRE}_preprocessed.json",
-            PROCESSED_DATA_DIR / f"{GENRE}_sequences.npz",
+            MODELS_DIR / f"{GENRE}_lstm_v2.keras",
+            MODELS_DIR / f"{GENRE}_training_metadata_v2.json",
+            PROCESSED_DATA_DIR / f"{GENRE}_v2_metadata.json",
+            PROCESSED_DATA_DIR / f"{GENRE}_v2_sequences.npz",
         )
     )
 
@@ -376,29 +377,58 @@ def render_controls() -> tuple[dict[str, int | float | None], bool]:
     return settings, generate_clicked
 
 
+def apply_minimum_duration(generated_stream: object, minimum_duration: float | None) -> None:
+    """Apply the UI's playback-only duration floor to an already-built V2 stream."""
+    if minimum_duration is None:
+        return
+    for musical_note in generated_stream.flatten().notes:
+        if float(musical_note.duration.quarterLength) < minimum_duration:
+            musical_note.duration.quarterLength = minimum_duration
+
+
 def generate_composition(settings: dict[str, int | float | None]) -> dict[str, object]:
-    """Use the existing Phase 5 and 6 functions for one UI generation request."""
-    model, input_sequences, id_to_event, sequence_length = load_model_resources()
+    """Generate one composition through the existing V2 model and reconstruction."""
+    model, input_sequences, mappings, grid_quarter_length, sequence_length = load_model_resources()
     random_seed = int(settings["seed"])
+    temperature = float(settings["temperature"])
     rng = np.random.default_rng(random_seed)
-    seed_sequence = select_seed_sequence(input_sequences, rng)
-    generated_ids = generate_event_ids(
-        model, seed_sequence, int(settings["length"]), float(settings["temperature"]), rng
+    seed_index = int(rng.integers(len(input_sequences)))
+    seed_sequence = input_sequences[seed_index].copy()
+
+    # Keep the existing UI compact: these are the V2 demo defaults, not new controls.
+    top_k = 10
+    duration_temperature = temperature
+    duration_top_k = 0
+    max_notes_per_onset = 4
+    generated_events, onset_cap_activations = generate_v2_events(
+        model,
+        seed_sequence,
+        mappings,
+        int(settings["length"]),
+        temperature,
+        top_k,
+        duration_temperature,
+        duration_top_k,
+        max_notes_per_onset,
+        rng,
     )
-    generated_tokens = [id_to_event[event_id] for event_id in generated_ids]
+    generated_stream, skipped_events, simultaneous_event_count = reconstruct_v2_midi(
+        generated_events, grid_quarter_length, float(settings["tempo"])
+    )
+    apply_minimum_duration(generated_stream, settings["min_duration"])
 
     OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_path = OUTPUTS_DIR / (
-        f"{GENRE}_studio_{settings['length']}_t{str(settings['temperature']).replace('.', 'p')}"
-        f"_tempo{str(settings['tempo']).replace('.', 'p')}_seed{random_seed}_{timestamp}.mid"
+    output_path = OUTPUTS_DIR / output_filename(
+        GENRE,
+        int(settings["length"]),
+        temperature,
+        top_k,
+        duration_temperature,
+        duration_top_k,
+        max_notes_per_onset,
+        random_seed,
     )
-    skipped_events = export_midi(
-        generated_tokens,
-        output_path,
-        min_duration=settings["min_duration"],
-        tempo_bpm=float(settings["tempo"]),
-    )
+    generated_stream.write("midi", fp=str(output_path))
     result: dict[str, object] = {
         "id": str(uuid.uuid4()),
         "display_name": next_display_name(st.session_state.generation_history),
@@ -407,8 +437,11 @@ def generate_composition(settings: dict[str, int | float | None]) -> dict[str, o
         "created_at": datetime.now().isoformat(timespec="seconds"),
         "settings": settings,
         "seed_sequence_length": sequence_length,
-        "generated_events": len(generated_tokens),
+        "generated_events": len(generated_events),
         "skipped_events": skipped_events,
+        "simultaneous_event_count": simultaneous_event_count,
+        "onset_cap_activations": onset_cap_activations,
+        "model_version": "v2",
         "favorite": False,
     }
     try:
@@ -930,30 +963,41 @@ def load_training_insights() -> dict[str, object]:
         "musical_events": None,
         "training_sequences": None,
         "vocabulary_size": None,
+        "class_counts": None,
         "sequence_length": None,
         "parameter_count": None,
         "model": {},
         "history": None,
     }
-    preprocessed_path = PROCESSED_DATA_DIR / f"{GENRE}_preprocessed.json"
+    preprocessed_path = PROCESSED_DATA_DIR / f"{GENRE}_v2_metadata.json"
     try:
         preprocessed = json.loads(preprocessed_path.read_text(encoding="utf-8"))
-        metadata = preprocessed.get("metadata", {})
-        insights["dataset"] = f"MAESTRO {metadata.get('genre', GENRE)} piano MIDI"
-        insights["midi_files"] = metadata.get("source_midi_files")
-        insights["musical_events"] = len(preprocessed.get("events", []))
-        insights["vocabulary_size"] = len(preprocessed.get("id_to_event", []))
-        insights["sequence_length"] = metadata.get("sequence_length")
+        insights["dataset"] = f"MAESTRO {preprocessed.get('genre', GENRE)} piano MIDI"
+        insights["midi_files"] = preprocessed.get("source_midi_files")
+        statistics = preprocessed.get("statistics", {})
+        insights["musical_events"] = statistics.get("total_note_events")
+        insights["class_counts"] = {
+            "pitch": statistics.get("unique_midi_pitches"),
+            "delta": statistics.get("unique_delta_time_values"),
+            "duration": statistics.get("unique_duration_values"),
+        }
+        insights["sequence_length"] = preprocessed.get("sequence_length")
     except (OSError, json.JSONDecodeError, TypeError):
         pass
 
     try:
         training_metadata = json.loads(TRAINING_METADATA_PATH.read_text(encoding="utf-8"))
-        training_examples = training_metadata.get("training_examples")
-        validation_examples = training_metadata.get("validation_examples")
+        training_examples = training_metadata.get("training_sequences_used")
+        validation_examples = training_metadata.get("validation_sequences_used")
         if isinstance(training_examples, int) and isinstance(validation_examples, int):
             insights["training_sequences"] = training_examples + validation_examples
-        insights["vocabulary_size"] = training_metadata.get("vocabulary_size", insights["vocabulary_size"])
+        class_mappings = training_metadata.get("class_mappings", {})
+        if isinstance(class_mappings, dict):
+            insights["class_counts"] = {
+                "pitch": len(class_mappings.get("pitch", {}).get("index_to_value", [])),
+                "delta": len(class_mappings.get("delta_steps", {}).get("index_to_value", [])),
+                "duration": len(class_mappings.get("duration_steps", {}).get("index_to_value", [])),
+            }
         insights["sequence_length"] = training_metadata.get("sequence_length", insights["sequence_length"])
         insights["parameter_count"] = training_metadata.get("parameter_count")
         insights["model"] = training_metadata.get("model", {})
@@ -980,21 +1024,32 @@ def render_training_insights() -> None:
     first_row[1].metric("Musical events", insight_value(insights["musical_events"]))
     first_row[2].metric("Training sequences", insight_value(insights["training_sequences"]))
     second_row = st.columns(3)
-    second_row[0].metric("Vocabulary", insight_value(insights["vocabulary_size"]))
+    class_counts = insights.get("class_counts")
+    if isinstance(class_counts, dict):
+        class_summary = (
+            f"P {insight_value(class_counts.get('pitch'))} · "
+            f"Δ {insight_value(class_counts.get('delta'))} · "
+            f"D {insight_value(class_counts.get('duration'))}"
+        )
+    else:
+        class_summary = "Unavailable"
+    second_row[0].metric("Output classes", class_summary)
     second_row[1].metric("Sequence length", insight_value(insights["sequence_length"]))
     second_row[2].metric("Parameters", insight_value(insights["parameter_count"]))
     st.caption(f"Dataset: {insights['dataset']}")
 
     model = insights["model"] if isinstance(insights["model"], dict) else {}
-    embedding = insight_value(model.get("embedding_dimension"))
+    pitch_embedding = insight_value(model.get("pitch_embedding_dimension"))
+    duration_embedding = insight_value(model.get("duration_embedding_dimension"))
+    delta_embedding = insight_value(model.get("delta_embedding_dimension"))
     lstm_units = insight_value(model.get("lstm_units"))
     dropout = insight_value(model.get("dropout_rate"))
     sequence_length = insight_value(insights["sequence_length"])
     st.markdown(
-        f"**Model:** Embedding({embedding}) → LSTM({lstm_units}) → Dropout({dropout}) → Dense/Softmax"
+        f"**Model:** Pitch Embedding({pitch_embedding}) + Duration Embedding({duration_embedding}) + Delta Embedding({delta_embedding}) → LSTM({lstm_units}) → Dropout({dropout}) → Multi-head Softmax"
     )
     st.markdown(
-        f"**Pipeline:** {sequence_length}-event sequence → Embedding → LSTM → Dropout → Softmax → Next-event probabilities"
+        f"**Pipeline:** {sequence_length}-event sequence → separate attribute embeddings → LSTM → three next-event probability heads"
     )
 
     history = insights.get("history")
