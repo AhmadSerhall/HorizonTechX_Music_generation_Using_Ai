@@ -208,6 +208,34 @@ Generated music was evaluated using both model metrics and musical characteristi
 
 A key lesson was that classification accuracy and loss alone do not determine whether generated music sounds musically convincing, so listening and structural MIDI analysis were also used.
 
+## 🖼️ Application Screenshots
+
+The repository includes selected screenshots in the root-level `assets/` folder to showcase the NeuraTune interface and its analysis features.
+
+### NeuraTune Overview
+
+![NeuraTune Overview](assets/overview.png)
+
+The main studio interface showing the generation workspace, model status, controls, and composition area.
+
+### AI Composition & Player
+
+![AI Composition](assets/overview2.png)
+
+The generated-composition view with the music player, generation results, metrics, and MIDI controls.
+
+### Pitch Analysis
+
+![Pitch Analysis](assets/pitchanalysis.png)
+
+Pitch-distribution visualization for inspecting the generated composition.
+
+### Rhythm Analysis
+
+![Rhythm Analysis](assets/rhythm.png)
+
+Rhythm/duration visualization for examining the generated composition's timing characteristics.
+
 ## 🖥️ Streamlit Application
 
 The final NeuraTune app uses **V2** for generation.
@@ -298,6 +326,12 @@ Horizon-TechX-Music-generation-Using-Ai/
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
+│
+├── assets/
+│   ├── overview.png
+│   ├── overview2.png
+│   ├── pitchanalysis.png
+│   └── rhythm.png
 │
 ├── data/
 │   ├── raw/
