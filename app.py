@@ -16,22 +16,23 @@ from music21 import chord, converter, note, tempo
 
 from src.audio_preview import render_midi_preview
 from src.evaluate import PITCH_CLASS_NAMES, analyze_midi
-from src.generate_v2 import (
-    MODELS_DIR,
-    OUTPUTS_DIR,
-    PROCESSED_DATA_DIR,
-    load_v2_generation_artifacts,
-    generate_v2_events,
-    reconstruct_v2_midi,
-    output_filename,
+from src.generate_v4 import (
+    MODELS as MODELS_DIR,
+    OUTPUTS as OUTPUTS_DIR,
+    PROCESSED as PROCESSED_DATA_DIR,
+    _load_artifacts as load_v4_generation_artifacts,
+    generate as generate_v4,
 )
 
 
 GENRE = "classical"
 HISTORY_PATH = OUTPUTS_DIR / "history.json"
 HISTORY_LIMIT = 10
-TEMPERATURE_PRESETS = (("Focused", 0.6), ("Balanced", 1.0), ("Experimental", 1.4))
-TRAINING_METADATA_PATH = MODELS_DIR / f"{GENRE}_training_metadata_v2.json"
+TEMPERATURE_PRESETS = (("Focused", 0.8), ("Balanced", 1.0), ("Experimental", 1.1))
+PRODUCTION_MODEL_PATH = MODELS_DIR / f"{GENRE}_lstm_v4_production.keras"
+TRAINING_METADATA_PATH = MODELS_DIR / f"{GENRE}_training_metadata_v4_production.json"
+V4_METADATA_PATH = PROCESSED_DATA_DIR / f"{GENRE}_v4_metadata.json"
+V4_SEQUENCES_PATH = PROCESSED_DATA_DIR / f"{GENRE}_v4_sequences.npz"
 
 
 def apply_theme() -> None:
@@ -112,9 +113,13 @@ def apply_theme() -> None:
 
 
 @st.cache_resource(show_spinner=False)
-def load_model_resources() -> tuple[object, np.ndarray, dict[str, np.ndarray], float, int]:
-    """Cache the production V2 model, seed data, and saved mappings."""
-    return load_v2_generation_artifacts(GENRE)
+def load_model_resources() -> tuple[object, ...]:
+    """Cache the frozen V4 production model and its exact artifacts."""
+    return load_v4_generation_artifacts(
+        GENRE,
+        str(PRODUCTION_MODEL_PATH),
+        str(TRAINING_METADATA_PATH),
+    )
 
 
 def initialize_session_state() -> None:
@@ -135,6 +140,11 @@ def initialize_session_state() -> None:
         for result in history:
             if not result.get("display_name"):
                 result["display_name"] = next_display_name(history)
+    pending_selection = st.session_state.pop("pending_library_selection", None)
+    if pending_selection is not None:
+        # Apply this before the selectbox is created on the rerun triggered by
+        # generation, so the new composition is immediately selected.
+        st.session_state.composition_library_selection = str(pending_selection)
     st.session_state.setdefault("latest_result", None)
     st.session_state.setdefault("latest_midi_path", None)
     st.session_state.setdefault("latest_settings", None)
@@ -191,6 +201,7 @@ def history_record(result: dict[str, object]) -> dict[str, object]:
         "seed": settings["seed"],
         "min_duration": settings["min_duration"],
         "generated_events": result["generated_events"],
+        "model_version": result.get("model_version", "V1/V2 historical"),
         "seed_sequence_length": result["seed_sequence_length"],
         "skipped_events": result["skipped_events"],
         "metrics": result.get("metrics"),
@@ -222,6 +233,7 @@ def result_from_history(record: dict[str, object]) -> dict[str, object] | None:
             "min_duration": record.get("min_duration"),
         },
         "generated_events": record.get("generated_events", record.get("length", 0)),
+        "model_version": record.get("model_version", "V1/V2 historical"),
         "seed_sequence_length": record.get("seed_sequence_length", 50),
         "skipped_events": record.get("skipped_events", 0),
         "metrics": record.get("metrics"),
@@ -299,10 +311,10 @@ def model_ready() -> bool:
     return all(
         path.exists()
         for path in (
-            MODELS_DIR / f"{GENRE}_lstm_v2.keras",
-            MODELS_DIR / f"{GENRE}_training_metadata_v2.json",
-            PROCESSED_DATA_DIR / f"{GENRE}_v2_metadata.json",
-            PROCESSED_DATA_DIR / f"{GENRE}_v2_sequences.npz",
+            PRODUCTION_MODEL_PATH,
+            TRAINING_METADATA_PATH,
+            V4_METADATA_PATH,
+            V4_SEQUENCES_PATH,
         )
     )
 
@@ -338,7 +350,8 @@ def render_controls() -> tuple[dict[str, int | float | None], bool]:
     """Render a compact settings card for the existing generation controls."""
     with st.container(border=True):
         st.markdown("<div class='card-title'>GENERATION SETTINGS</div>", unsafe_allow_html=True)
-        length = st.slider("Generation Length", 50, 500, 200, 10)
+        length = st.slider("Composition Length", 50, 500, 200, 10)
+        st.markdown("<div class='control-help'>Length is measured as generated musical moments.</div>", unsafe_allow_html=True)
         st.markdown("<div class='control-help'>CREATIVITY PRESET</div>", unsafe_allow_html=True)
         preset_columns = st.columns(3)
         current_temperature = float(st.session_state.get("temperature_control", 1.0))
@@ -356,13 +369,11 @@ def render_controls() -> tuple[dict[str, int | float | None], bool]:
         st.caption("0.3–0.7 conservative · 0.8–1.2 balanced · 1.3–1.5 experimental")
         tempo = st.slider("Tempo", 60, 180, 100, 1, format="%d BPM")
 
-        seed_column, duration_column = st.columns(2)
+        seed_column, _ = st.columns(2)
         with seed_column:
             seed = st.number_input("Random Seed", min_value=0, value=42, step=1)
-        with duration_column:
-            duration_choice = st.selectbox("Min Duration", ["Original", "0.25", "0.5", "1.0"], index=2)
         st.markdown(
-            "<div class='control-help'>Minimum duration affects MIDI reconstruction only, never the model prediction.</div>",
+            "<div class='control-help'>V4 preserves the model-predicted note durations.</div>",
             unsafe_allow_html=True,
         )
         generate_clicked = st.button("✦ Generate Music", type="primary", use_container_width=True)
@@ -372,63 +383,36 @@ def render_controls() -> tuple[dict[str, int | float | None], bool]:
         "temperature": temperature,
         "seed": int(seed),
         "tempo": tempo,
-        "min_duration": None if duration_choice == "Original" else float(duration_choice),
+        # Retained for compatibility with older history records; V4 does not
+        # apply post-generation duration rewriting.
+        "min_duration": None,
     }
     return settings, generate_clicked
 
 
-def apply_minimum_duration(generated_stream: object, minimum_duration: float | None) -> None:
-    """Apply the UI's playback-only duration floor to an already-built V2 stream."""
-    if minimum_duration is None:
-        return
-    for musical_note in generated_stream.flatten().notes:
-        if float(musical_note.duration.quarterLength) < minimum_duration:
-            musical_note.duration.quarterLength = minimum_duration
-
-
 def generate_composition(settings: dict[str, int | float | None]) -> dict[str, object]:
-    """Generate one composition through the existing V2 model and reconstruction."""
-    model, input_sequences, mappings, grid_quarter_length, sequence_length = load_model_resources()
-    random_seed = int(settings["seed"])
+    """Generate one composition through the frozen V4 grouped-onset pipeline."""
+    resources = load_model_resources()
     temperature = float(settings["temperature"])
-    rng = np.random.default_rng(random_seed)
-    seed_index = int(rng.integers(len(input_sequences)))
-    seed_sequence = input_sequences[seed_index].copy()
-
-    # Keep the existing UI compact: these are the V2 demo defaults, not new controls.
-    top_k = 10
-    duration_temperature = temperature
-    duration_top_k = 0
-    max_notes_per_onset = 4
-    generated_events, onset_cap_activations = generate_v2_events(
-        model,
-        seed_sequence,
-        mappings,
-        int(settings["length"]),
-        temperature,
-        top_k,
-        duration_temperature,
-        duration_top_k,
-        max_notes_per_onset,
-        rng,
-    )
-    generated_stream, skipped_events, simultaneous_event_count = reconstruct_v2_midi(
-        generated_events, grid_quarter_length, float(settings["tempo"])
-    )
-    apply_minimum_duration(generated_stream, settings["min_duration"])
-
-    OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
-    output_path = OUTPUTS_DIR / output_filename(
-        GENRE,
-        int(settings["length"]),
-        temperature,
-        top_k,
-        duration_temperature,
-        duration_top_k,
-        max_notes_per_onset,
-        random_seed,
-    )
-    generated_stream.write("midi", fp=str(output_path))
+    output_path = OUTPUTS_DIR / f"neuraltune_v4_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.mid"
+    arguments = type("V4GenerationArgs", (), {
+        "genre": GENRE,
+        "length": int(settings["length"]),
+        "temperature": temperature,
+        "top_k": 10,
+        "delta_temperature": 0.8,
+        "duration_temperature": 0.8,
+        "seed": int(settings["seed"]),
+        "tempo": float(settings["tempo"]),
+        "model_path": str(PRODUCTION_MODEL_PATH),
+        "training_metadata_path": str(TRAINING_METADATA_PATH),
+        "output_path": str(output_path),
+    })()
+    generated = generate_v4(arguments, resources=resources)
+    output_path = Path(generated["path"])
+    # The V4 export is authoritative. Audio preview rendering reads it without
+    # parsing, rewriting, or otherwise mutating the MIDI file.
+    diagnostics = generated["diagnostics"]
     result: dict[str, object] = {
         "id": str(uuid.uuid4()),
         "display_name": next_display_name(st.session_state.generation_history),
@@ -436,12 +420,12 @@ def generate_composition(settings: dict[str, int | float | None]) -> dict[str, o
         "audio_preview_path": None,
         "created_at": datetime.now().isoformat(timespec="seconds"),
         "settings": settings,
-        "seed_sequence_length": sequence_length,
-        "generated_events": len(generated_events),
-        "skipped_events": skipped_events,
-        "simultaneous_event_count": simultaneous_event_count,
-        "onset_cap_activations": onset_cap_activations,
-        "model_version": "v2",
+        "seed_sequence_length": 50,
+        "generated_events": int(diagnostics["onset_groups"]),
+        "skipped_events": 0,
+        "simultaneous_event_count": int(diagnostics["total_notes"] - diagnostics["onset_groups"]),
+        "onset_cap_activations": 0,
+        "model_version": "V4 Production",
         "favorite": False,
     }
     try:
@@ -469,7 +453,12 @@ def player_markup(result: dict[str, object] | None) -> str:
 
     metrics = result.get("metrics") or {}
     settings = result["settings"]
-    minimum_duration = settings["min_duration"] if settings["min_duration"] is not None else "Original"
+    if result.get("model_version") == "V4 Production":
+        minimum_duration = "Model-predicted"
+    elif settings["min_duration"] is not None:
+        minimum_duration = f"Historical {settings['min_duration']}"
+    else:
+        minimum_duration = "Original"
     display_name = str(result.get("display_name") or f"Neural Composition #{settings['seed']}")
     return f"""
     <div class="player-top"><div class="album-art"></div><div>
@@ -479,7 +468,7 @@ def player_markup(result: dict[str, object] | None) -> str:
       {waveform_markup()}
     </div></div>
     <div class="metric-row">
-      <div class="metric-block"><div class="metric-value">{result['generated_events']}</div><div class="metric-label">EVENTS</div></div>
+      <div class="metric-block"><div class="metric-value">{result['generated_events']}</div><div class="metric-label">MOMENTS</div></div>
       <div class="metric-block"><div class="metric-value">{settings['temperature']}</div><div class="metric-label">CREATIVITY</div></div>
       <div class="metric-block"><div class="metric-value">{settings['tempo']}</div><div class="metric-label">BPM</div></div>
       <div class="metric-block"><div class="metric-value">{metrics.get('unique_pitches', '—')}</div><div class="metric-label">PITCHES</div></div>
@@ -538,7 +527,7 @@ def get_audio_preview(midi_path: Path, tempo_bpm: float) -> tuple[bytes | None, 
         pass
     preview = synthesize_midi_preview(str(midi_path), tempo_bpm)
     if preview:
-        return preview, 'Instant browser preview · lightweight local synthesizer', None
+        return preview, 'Basic local MIDI preview', None
     return None, 'Audio preview could not be created.', None
 
 
@@ -546,9 +535,9 @@ def audio_preview_label(audio_preview: bytes | None, status: str) -> str:
     """Summarize the active preview renderer without exposing implementation details."""
     if not audio_preview:
         return "Audio preview unavailable"
-    if "FluidSynth" in status:
-        return "Audio: High-quality SoundFont"
-    return "Audio: Basic local preview"
+    if "SoundFont" in status or "FluidSynth" in status:
+        return "Audio: High-quality SoundFont preview"
+    return "Audio: Basic local MIDI preview"
 
 
 def render_player() -> None:
@@ -621,7 +610,7 @@ def render_composition_library() -> None:
         labels = {
             str(item["id"]): (
                 f"{'★ ' if item.get('favorite') else ''}{item.get('display_name', 'Neural Composition')}"
-                f" · {item['settings']['length']} events"
+                f" · {item['settings']['length']} moments"
             )
             for item in visible_history
         }
@@ -833,7 +822,11 @@ def render_piano_visualizer_player(
     component_html = """
     <style>
       html, body { height: 100%; margin: 0; background: transparent; font-family: Inter, system-ui, sans-serif; }
-      .mini-player { height: 54px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid rgba(45,212,191,.28); border-radius: 16px; background: #0B1115; color: #F8FAFC; }
+      .mini-player { position: relative; height: 54px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid rgba(45,212,191,.28); border-radius: 16px; background: #0B1115; color: #F8FAFC; }
+      .mini-player.floating { position: fixed; right: 7px; bottom: 7px; z-index: 5; width: 72px; height: 72px; padding: 5px; display: grid; place-items: center; border-radius: 50%; border-color: rgba(45,212,191,.6); background: conic-gradient(#2DD4BF var(--mini-progress, 0%), #1B2A30 0); box-shadow: 0 10px 32px rgba(0,0,0,.48), 0 0 22px rgba(45,212,191,.24); }
+      .mini-player.floating::before { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: #0B1115; }
+      .mini-player.floating .mini-play { position: relative; z-index: 1; width: 48px; height: 48px; }
+      .mini-player.floating .mini-copy, .mini-player.floating .mini-time { display: none; }
       .mini-play { width: 34px; height: 34px; padding: 0; border-radius: 50%; background: linear-gradient(145deg, #14B8A6, #38BDF8); color: #071014; }
       .mini-copy { flex: 1; min-width: 0; } .mini-label { color: #99F6E4; font-size: 10px; font-weight: 800; letter-spacing: .08em; } .mini-progress { height: 4px; margin-top: 6px; overflow: hidden; border-radius: 99px; background: #26333B; } .mini-progress > div { width: 0%; height: 100%; background: linear-gradient(90deg, #14B8A6, #38BDF8); }
       .mini-time { min-width: 74px; color: #CBD5E1; font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
@@ -888,7 +881,7 @@ def render_piano_visualizer_player(
       const playButton = document.getElementById('play-toggle');
       const restartButton = document.getElementById('restart'), progress = document.getElementById('progress');
       const timeLabel = document.getElementById('time');
-      const miniToggle = document.getElementById('mini-toggle'), miniProgress = document.getElementById('mini-progress'), miniTime = document.getElementById('mini-time');
+      const miniPlayer = document.querySelector('.mini-player'), miniToggle = document.getElementById('mini-toggle'), miniProgress = document.getElementById('mini-progress'), miniTime = document.getElementById('mini-time');
       const modal = document.getElementById('modal'), minimizeButton = document.getElementById('minimize'), exitButton = document.getElementById('exit');
       let savedFrameStyle;
       document.getElementById('tempo').textContent = `${Math.round(timeline.bpm)} BPM`;
@@ -904,30 +897,49 @@ def render_piano_visualizer_player(
         else { key.style.width = `${whiteWidth}%`; key.style.left = `${whiteIndex * whiteWidth}%`; centers[pitch] = (whiteIndex + .5) * whiteWidth; keyWidths[pitch] = whiteWidth; if (pitch % 12 === 0) { const label = document.createElement('span'); label.className = 'key-label'; label.textContent = `C${Math.floor(pitch / 12) - 1}`; key.appendChild(label); } whiteIndex++; }
         keyboard.appendChild(key); keyNodes[pitch] = key;
       }
-      const bars = notes.map(note => { const bar = document.createElement('div'); bar.className = 'fall-note'; lane.appendChild(bar); return { note, bar }; });
+      // Give genuinely overlapping notes on the same pitch separate narrow
+      // lanes so a sustained bar never hides a shorter retrigger.
+      const noteLayout = notes.map(() => ({ lane: 0, count: 1 }));
+      const pitchGroups = {};
+      notes.forEach((item, index) => { (pitchGroups[item.pitch] ||= []).push(index); });
+      Object.values(pitchGroups).forEach(indices => {
+        indices.sort((a, b) => Number(notes[a].start) - Number(notes[b].start));
+        const active = [], placements = [];
+        indices.forEach(index => {
+          const start = Number(notes[index].start), end = start + Number(notes[index].duration);
+          for (let i = active.length - 1; i >= 0; i--) if (active[i].end <= start) active.splice(i, 1);
+          let laneIndex = 0; while (active.some(item => item.lane === laneIndex)) laneIndex++;
+          active.push({ lane: laneIndex, end }); placements.push({ index, lane: laneIndex });
+        });
+        const laneCount = Math.max(1, ...placements.map(item => item.lane + 1));
+        placements.forEach(item => { noteLayout[item.index] = { lane: item.lane, count: laneCount }; });
+      });
+      const bars = notes.map((note, index) => { const bar = document.createElement('div'); bar.className = 'fall-note'; lane.appendChild(bar); return { note, bar, layout: noteLayout[index] }; });
       let frameId = null, visualTime = 0, visualStartedAt = 0, visualPlaying = false;
       const formatTime = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
       const currentTime = now => audioSource ? audio.currentTime : (visualPlaying ? Math.min(duration, visualTime + (now - visualStartedAt) / 1000) : visualTime);
       const render = now => {
         const current = currentTime(now); const lookAhead = 3.4; const laneHeight = lane.clientHeight - 4; const scale = laneHeight / lookAhead;
         const active = new Set();
-        bars.forEach(({ note, bar }) => {
+        bars.forEach(({ note, bar, layout }) => {
           const until = Number(note.start) - current, noteDuration = Number(note.duration);
           if (until > lookAhead || until + noteDuration < 0 || centers[note.pitch] === undefined) { bar.style.display = 'none'; return; }
           const height = Math.max(8, noteDuration * scale); const y = Math.min(laneHeight - height, (lookAhead - until) * scale - height);
-          bar.style.display = 'block'; bar.style.left = `${centers[note.pitch]}%`; bar.style.width = `${keyWidths[note.pitch]}%`; bar.style.height = `${height}px`; bar.style.transform = `translate(-50%, ${y}px)`;
+          const keyWidth = keyWidths[note.pitch], laneWidth = layout.count > 1 ? keyWidth / layout.count * .9 : keyWidth; const laneCenter = centers[note.pitch] + (layout.lane - (layout.count - 1) / 2) * keyWidth / layout.count;
+          bar.style.display = 'block'; bar.style.left = `${laneCenter}%`; bar.style.width = `${laneWidth}%`; bar.style.height = `${height}px`; bar.style.transform = `translate(-50%, ${y}px)`;
           const isActive = current >= Number(note.start) && current < Number(note.start) + noteDuration;
           bar.classList.toggle('active', isActive); if (isActive) active.add(note.pitch);
         });
         Object.entries(keyNodes).forEach(([pitch, key]) => key.classList.toggle('active', active.has(Number(pitch))));
-        const progressValue = `${Math.min(100, current / duration * 100)}%`; progress.style.width = progressValue; miniProgress.style.width = progressValue; timeLabel.textContent = `${formatTime(current)} / ${formatTime(duration)}`; miniTime.textContent = timeLabel.textContent;
+        const progressValue = `${Math.min(100, current / duration * 100)}%`; progress.style.width = progressValue; miniProgress.style.width = progressValue; miniPlayer.style.setProperty('--mini-progress', progressValue); timeLabel.textContent = `${formatTime(current)} / ${formatTime(duration)}`; miniTime.textContent = timeLabel.textContent;
         if ((audioSource && !audio.paused && !audio.ended) || (!audioSource && visualPlaying && current < duration)) frameId = requestAnimationFrame(render);
         else if (!audioSource) { visualTime = current; visualPlaying = false; }
       };
       const updatePlayButton = playing => { playButton.textContent = playing ? '⏸ Pause' : '▶ Play'; miniToggle.textContent = playing ? '⏸' : '▶'; miniToggle.setAttribute('aria-label', playing ? 'Pause composition' : 'Play composition'); };
       const setFrameExpanded = expanded => { try { const frame = window.frameElement; if (!frame) return; if (expanded) { if (savedFrameStyle === undefined) savedFrameStyle = frame.getAttribute('style'); frame.style.position = 'fixed'; frame.style.inset = '0'; frame.style.width = '100vw'; frame.style.height = '100vh'; frame.style.zIndex = '999999'; frame.style.border = '0'; } else if (savedFrameStyle === null) frame.removeAttribute('style'); else if (savedFrameStyle !== undefined) frame.setAttribute('style', savedFrameStyle); } catch (_) {} };
-      const openModal = () => { modal.classList.add('open'); setFrameExpanded(true); };
-      const minimizeModal = () => { modal.classList.remove('open'); setFrameExpanded(false); };
+      const setFrameMinimized = () => { try { const frame = window.frameElement; if (!frame) return; if (savedFrameStyle === undefined) savedFrameStyle = frame.getAttribute('style'); frame.style.position = 'fixed'; frame.style.left = 'auto'; frame.style.top = 'auto'; frame.style.right = '18px'; frame.style.bottom = '18px'; frame.style.width = '86px'; frame.style.height = '86px'; frame.style.zIndex = '999999'; frame.style.border = '0'; } catch (_) {} };
+      const openModal = () => { modal.classList.add('open'); miniPlayer.classList.remove('floating'); setFrameExpanded(true); };
+      const minimizeModal = () => { modal.classList.remove('open'); miniPlayer.classList.add('floating'); setFrameMinimized(); };
       const start = () => {
         if (audioSource) audio.play().catch(() => { status.textContent = 'Audio playback was blocked — visualization only'; audioSource = null; visualStartedAt = performance.now(); visualPlaying = true; updatePlayButton(true); frameId = requestAnimationFrame(render); });
         else { visualStartedAt = performance.now(); visualPlaying = true; updatePlayButton(true); frameId = requestAnimationFrame(render); }
@@ -935,10 +947,14 @@ def render_piano_visualizer_player(
       const pause = () => { if (audioSource) audio.pause(); else { visualTime = currentTime(performance.now()); visualPlaying = false; updatePlayButton(false); } cancelAnimationFrame(frameId); render(performance.now()); };
       const restart = () => { if (audioSource) { audio.currentTime = 0; } visualTime = 0; visualStartedAt = performance.now(); if (!audioSource || !audio.paused) { visualPlaying = true; cancelAnimationFrame(frameId); frameId = requestAnimationFrame(render); } else render(performance.now()); };
       playButton.onclick = () => { if ((audioSource && !audio.paused) || (!audioSource && visualPlaying)) pause(); else start(); };
-      miniToggle.onclick = () => { if ((audioSource && !audio.paused) || (!audioSource && visualPlaying)) pause(); else { openModal(); start(); } };
+      miniToggle.onclick = () => {
+         const playing = (audioSource && !audio.paused) || (!audioSource && visualPlaying);
+         if (!modal.classList.contains('open')) { openModal(); if (!playing) start(); else { cancelAnimationFrame(frameId); frameId = requestAnimationFrame(render); } return; }
+         if (playing) pause(); else { openModal(); start(); }
+       };
       restartButton.onclick = restart;
       minimizeButton.onclick = minimizeModal;
-      exitButton.onclick = () => { pause(); if (audioSource) audio.currentTime = 0; visualTime = 0; render(performance.now()); minimizeModal(); };
+      exitButton.onclick = () => { pause(); if (audioSource) audio.currentTime = 0; visualTime = 0; render(performance.now()); miniPlayer.classList.remove('floating'); modal.classList.remove('open'); setFrameExpanded(false); };
       if (audioSource) { audio.onplay = () => { updatePlayButton(true); cancelAnimationFrame(frameId); frameId = requestAnimationFrame(render); }; audio.onpause = () => { updatePlayButton(false); cancelAnimationFrame(frameId); render(performance.now()); }; audio.onended = () => { updatePlayButton(false); cancelAnimationFrame(frameId); render(performance.now()); }; }
       else updatePlayButton(false);
       render(performance.now());
@@ -969,17 +985,17 @@ def load_training_insights() -> dict[str, object]:
         "model": {},
         "history": None,
     }
-    preprocessed_path = PROCESSED_DATA_DIR / f"{GENRE}_v2_metadata.json"
+    preprocessed_path = V4_METADATA_PATH
     try:
         preprocessed = json.loads(preprocessed_path.read_text(encoding="utf-8"))
         insights["dataset"] = f"MAESTRO {preprocessed.get('genre', GENRE)} piano MIDI"
         insights["midi_files"] = preprocessed.get("source_midi_files")
         statistics = preprocessed.get("statistics", {})
-        insights["musical_events"] = statistics.get("total_note_events")
+        insights["musical_events"] = preprocessed.get("total_raw_notes")
         insights["class_counts"] = {
-            "pitch": statistics.get("unique_midi_pitches"),
-            "delta": statistics.get("unique_delta_time_values"),
-            "duration": statistics.get("unique_duration_values"),
+            "pitch": preprocessed.get("pitch_classes"),
+            "delta": len(preprocessed.get("mappings", {}).get("delta_steps", {}).get("index_to_value", [])),
+            "duration": len(preprocessed.get("mappings", {}).get("duration_steps", {}).get("index_to_value", [])),
         }
         insights["sequence_length"] = preprocessed.get("sequence_length")
     except (OSError, json.JSONDecodeError, TypeError):
@@ -987,20 +1003,28 @@ def load_training_insights() -> dict[str, object]:
 
     try:
         training_metadata = json.loads(TRAINING_METADATA_PATH.read_text(encoding="utf-8"))
-        training_examples = training_metadata.get("training_sequences_used")
-        validation_examples = training_metadata.get("validation_sequences_used")
+        training_examples = training_metadata.get("train_sequence_count")
+        validation_examples = training_metadata.get("validation_sequence_count")
         if isinstance(training_examples, int) and isinstance(validation_examples, int):
             insights["training_sequences"] = training_examples + validation_examples
-        class_mappings = training_metadata.get("class_mappings", {})
-        if isinstance(class_mappings, dict):
+        class_counts = training_metadata.get("class_counts", {})
+        if isinstance(class_counts, dict):
             insights["class_counts"] = {
-                "pitch": len(class_mappings.get("pitch", {}).get("index_to_value", [])),
-                "delta": len(class_mappings.get("delta_steps", {}).get("index_to_value", [])),
-                "duration": len(class_mappings.get("duration_steps", {}).get("index_to_value", [])),
+                "pitch": class_counts.get("pitch_decoder_including_eos"),
+                "delta": class_counts.get("delta"),
+                "duration": class_counts.get("duration"),
             }
         insights["sequence_length"] = training_metadata.get("sequence_length", insights["sequence_length"])
         insights["parameter_count"] = training_metadata.get("parameter_count")
-        insights["model"] = training_metadata.get("model", {})
+        architecture = training_metadata.get("architecture", {})
+        insights["model"] = {
+            "pitch_embedding_dimension": 32,
+            "duration_embedding_dimension": 16,
+            "delta_embedding_dimension": 16,
+            "lstm_units": 256,
+            "dropout_rate": 0.3,
+            "description": architecture.get("conditional_pitch_decoder", "Conditional GRU(256) with START/EOS"),
+        }
         history = training_metadata.get("history")
         if isinstance(history, dict) and history.get("loss") and history.get("val_loss"):
             insights["history"] = history
@@ -1045,11 +1069,12 @@ def render_training_insights() -> None:
     lstm_units = insight_value(model.get("lstm_units"))
     dropout = insight_value(model.get("dropout_rate"))
     sequence_length = insight_value(insights["sequence_length"])
+    description = model.get("description", "Conditional GRU(256) with START/EOS")
     st.markdown(
-        f"**Model:** Pitch Embedding({pitch_embedding}) + Duration Embedding({duration_embedding}) + Delta Embedding({delta_embedding}) → LSTM({lstm_units}) → Dropout({dropout}) → Multi-head Softmax"
+        f"**Model:** Pitch Embedding({pitch_embedding}) + Duration Embedding({duration_embedding}) + Delta Embedding({delta_embedding}) → LSTM({lstm_units}) → Dropout({dropout}) → {description}"
     )
     st.markdown(
-        f"**Pipeline:** {sequence_length}-event sequence → separate attribute embeddings → LSTM → three next-event probability heads"
+        f"**Pipeline:** {sequence_length}-onset context → grouped onset decoder → START/EOS pitch slots → aligned durations + delta timing"
     )
 
     history = insights.get("history")
@@ -1121,7 +1146,7 @@ def render_analysis() -> None:
             render_training_insights()
         with model_tab:
             st.markdown(
-                "**MAESTRO MIDI** → **50-event sequence** → **Embedding** → **LSTM** → **Softmax** → **Temperature sampling** → **MIDI**"
+                "**MAESTRO MIDI** → **50-onset context** → **LSTM historical encoder** → **conditional GRU pitch decoder** → **START/EOS onset construction** → **pitch-conditioned durations + learned delta timing** → **MIDI**"
             )
             st.caption("Temperature adjusts randomness and diversity; it does not retrain or alter the model.")
 
@@ -1146,15 +1171,16 @@ def main() -> None:
         except FileNotFoundError:
             overlay.empty()
             st.error("The trained model or processed artifacts are missing. Complete the backend phases first.")
+        except ValueError:
+            overlay.empty()
+            st.error("The frozen V4 production model and metadata are incompatible.")
         except Exception:
             overlay.empty()
             st.error("Generation could not be completed. Check that the trained model and artifacts are valid.")
         else:
             overlay.empty()
-            st.session_state.latest_result = result
-            st.session_state.latest_midi_path = result["midi_path"]
-            st.session_state.latest_settings = settings
-            st.session_state.latest_metrics = result.get("metrics")
+            set_selected_composition(result)
+            st.session_state.pending_library_selection = str(result["id"])
             history = [result] + [
                 item
                 for item in st.session_state.generation_history

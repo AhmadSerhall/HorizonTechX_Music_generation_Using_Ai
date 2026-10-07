@@ -1,5 +1,6 @@
 """Local WAV preview rendering for generated MIDI files."""
 
+import hashlib
 import math
 import os
 import shutil
@@ -64,43 +65,101 @@ def _render_basic_preview(midi_path: Path, preview_path: Path) -> tuple[Path | N
 
 
 def _fluidsynth_command() -> str | None:
-    """Find an optional user-configured FluidSynth executable or PATH command."""
-    configured_path = os.environ.get("FLUIDSYNTH_PATH")
-    if configured_path:
-        configured = Path(configured_path)
-        if configured.is_file():
-            return str(configured)
-        command = shutil.which(configured_path)
+    """Find an optional FluidSynth executable on Windows or another OS."""
+    configured_value = os.environ.get("FLUIDSYNTH_PATH")
+    if configured_value:
+        configured_value = configured_value.strip().strip('"')
+        configured = Path(configured_value)
+        candidates = [configured]
+        if configured.is_dir():
+            candidates.extend((configured / "fluidsynth.exe", configured / "fluidsynth"))
+        for candidate in candidates:
+            if candidate.is_file():
+                return str(candidate)
+        command = shutil.which(configured_value)
         if command:
             return command
-    return shutil.which("fluidsynth")
+
+    for command_name in ("fluidsynth.exe", "fluidsynth"):
+        command = shutil.which(command_name)
+        if command:
+            return command
+    return None
+
+
+def _soundfont_path() -> Path | None:
+    """Return the preferred, validated local SoundFont configuration."""
+    configured_value = os.environ.get("NEURATUNE_SOUNDFONT") or os.environ.get("SOUNDFONT_PATH")
+    if not configured_value:
+        return None
+    candidate = Path(configured_value.strip().strip('"'))
+    if not candidate.is_file() or candidate.suffix.lower() not in {".sf2", ".sf3"}:
+        return None
+    return candidate
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _cache_key(midi_path: Path, renderer: str, extra: str = "") -> str:
+    """Tie preview filenames to the exact MIDI bytes and renderer settings."""
+    identity = f"{renderer}|{extra}|{_sha256_file(midi_path)}"
+    return hashlib.sha256(identity.encode("utf-8")).hexdigest()[:20]
+
+
+def _path_identity(path: Path) -> str:
+    """Identify a renderer binary/resource without copying it into the cache key."""
+    try:
+        stat = path.stat()
+        return f"{path.resolve()}|{stat.st_size}|{stat.st_mtime_ns}"
+    except OSError:
+        return str(path)
+
+
+def _valid_wav(path: Path, sample_rate: int, channels: int) -> bool:
+    if not path.is_file() or path.stat().st_size <= 44:
+        return False
+    try:
+        with wave.open(str(path), "rb") as wav_file:
+            return (
+                wav_file.getframerate() == sample_rate
+                and wav_file.getnchannels() == channels
+                and wav_file.getsampwidth() == 2
+                and wav_file.getnframes() > 0
+            )
+    except (OSError, wave.Error):
+        return False
 
 
 def render_midi_preview(midi_path: Path) -> tuple[Path | None, str | None]:
-    """Render a cached WAV with FluidSynth or a built-in local fallback."""
+    """Render a read-only MIDI preview with FluidSynth or a local fallback."""
     preview_directory = midi_path.parent / "previews"
-    fluidsynth_preview = preview_directory / f"{midi_path.stem}_fluidsynth.wav"
-    basic_preview = preview_directory / f"{midi_path.stem}_basic.wav"
-    legacy_preview = preview_directory / f"{midi_path.stem}.wav"
     fluidsynth = _fluidsynth_command()
-    soundfont_value = os.environ.get("SOUNDFONT_PATH") or os.environ.get("NEURATUNE_SOUNDFONT")
-    soundfont_path = Path(soundfont_value) if soundfont_value else None
+    soundfont_path = _soundfont_path()
 
-    if fluidsynth and soundfont_path is not None and soundfont_path.is_file():
-        if fluidsynth_preview.exists() and fluidsynth_preview.stat().st_size > 0:
-            return fluidsynth_preview, "Cached FluidSynth piano preview"
+    if fluidsynth and soundfont_path is not None:
+        soundfont_identity = f"{_path_identity(Path(fluidsynth))}|{_path_identity(soundfont_path)}"
+        cache_key = _cache_key(midi_path, "fluidsynth-v1", soundfont_identity)
+        fluidsynth_preview = preview_directory / f"{midi_path.stem}_{cache_key}_fluidsynth.wav"
+        if _valid_wav(fluidsynth_preview, 44100, 2):
+            return fluidsynth_preview, "High-quality SoundFont preview"
         preview_directory.mkdir(parents=True, exist_ok=True)
         try:
             subprocess.run(
                 [
                     fluidsynth,
                     "-ni",
-                    str(soundfont_path),
-                    str(midi_path),
                     "-F",
                     str(fluidsynth_preview),
                     "-r",
                     "44100",
+                    str(soundfont_path),
+                    str(midi_path),
                 ],
                 check=True,
                 capture_output=True,
@@ -109,12 +168,11 @@ def render_midi_preview(midi_path: Path) -> tuple[Path | None, str | None]:
             )
         except (OSError, subprocess.SubprocessError):
             pass
-        else:
-            if fluidsynth_preview.exists() and fluidsynth_preview.stat().st_size > 0:
-                return fluidsynth_preview, "FluidSynth piano preview"
+        if _valid_wav(fluidsynth_preview, 44100, 2):
+            return fluidsynth_preview, "High-quality SoundFont preview"
 
-    if basic_preview.exists() and basic_preview.stat().st_size > 0:
-        return basic_preview, "Cached basic local MIDI preview"
-    if legacy_preview.exists() and legacy_preview.stat().st_size > 0:
-        return legacy_preview, "Cached basic local MIDI preview"
+    cache_key = _cache_key(midi_path, "basic-v2", "22050|mono|pcm16")
+    basic_preview = preview_directory / f"{midi_path.stem}_{cache_key}_basic.wav"
+    if _valid_wav(basic_preview, 22050, 1):
+        return basic_preview, "Basic local MIDI preview"
     return _render_basic_preview(midi_path, basic_preview)

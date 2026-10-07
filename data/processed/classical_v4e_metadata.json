@@ -1,0 +1,677 @@
+{
+  "representation_version": "V4E_compact_rhythm",
+  "genre": "classical",
+  "source_files": [
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_02_R1_2004_01-05_ORIG_MID--AUDIO_02_R1_2004_05_Track05_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_02_R1_2004_01-05_ORIG_MID--AUDIO_02_R1_2004_06_Track06_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_02_R1_2004_01-05_ORIG_MID--AUDIO_02_R1_2004_08_Track08_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_02_R1_2004_01-05_ORIG_MID--AUDIO_02_R1_2004_10_Track10_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_05_R1_2004_01_ORIG_MID--AUDIO_05_R1_2004_02_Track02_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_05_R1_2004_01_ORIG_MID--AUDIO_05_R1_2004_03_Track03_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_05_R1_2004_02-03_ORIG_MID--AUDIO_05_R1_2004_06_Track06_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_07_R1_2004_01_ORIG_MID--AUDIO_07_R1_2004_02_Track02_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_07_R1_2004_01_ORIG_MID--AUDIO_07_R1_2004_04_Track04_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_07_R1_2004_01_ORIG_MID--AUDIO_07_R1_2004_06_Track06_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_07_R1_2004_01_ORIG_MID--AUDIO_07_R1_2004_12_Track12_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_12_01_2004_01-05_ORIG_MID--AUDIO_12_R1_2004_03_Track03_wav--1.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_12_01_2004_01-05_ORIG_MID--AUDIO_12_R1_2004_07_Track07_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_12_01_2004_01-05_ORIG_MID--AUDIO_12_R1_2004_08_Track08_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_12_01_2004_01-05_ORIG_MID--AUDIO_12_R1_2004_09_Track09_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_12_01_2004_01-05_ORIG_MID--AUDIO_12_R1_2004_10_Track10_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_13_01_2004_01-05_ORIG_MID--AUDIO_13_R1_2004_02_Track02_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_13_01_2004_01-05_ORIG_MID--AUDIO_13_R1_2004_05_Track05_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_13_01_2004_01-05_ORIG_MID--AUDIO_13_R1_2004_08_Track08_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_13_01_2004_01-05_ORIG_MID--AUDIO_13_R1_2004_09_Track09_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_13_01_2004_01-05_ORIG_MID--AUDIO_13_R1_2004_10_Track10_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_13_01_2004_01-05_ORIG_MID--AUDIO_13_R1_2004_12_Track12_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_16_R1_2004_01-08_ORIG_MID--AUDIO_16_R1_2004_02_Track02_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_16_R1_2004_01-08_ORIG_MID--AUDIO_16_R1_2004_03_Track03_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_16_R1_2004_01-08_ORIG_MID--AUDIO_16_R1_2004_04_Track04_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_16_R1_2004_01-08_ORIG_MID--AUDIO_16_R1_2004_05_Track05_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_16_R1_2004_01-08_ORIG_MID--AUDIO_16_R1_2004_06_Track06_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_16_R1_2004_01-08_ORIG_MID--AUDIO_16_R1_2004_08_Track08_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_16_R1_2004_01-08_ORIG_MID--AUDIO_16_R1_2004_13_Track13_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_01-02_ORIG_MID--AUDIO_20_R2_2004_02_Track02_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_01-02_ORIG_MID--AUDIO_20_R2_2004_04_Track04_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_01-02_ORIG_MID--AUDIO_20_R2_2004_06_Track06_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_01-03_ORIG_MID--AUDIO_17_R1_2004_02_Track02_wav--1.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_01-03_ORIG_MID--AUDIO_17_R1_2004_02_Track02_wav--2.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_01-03_ORIG_MID--AUDIO_17_R1_2004_03_Track03_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_01-03_ORIG_MID--AUDIO_17_R1_2004_06_Track06_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_03-06_ORIG_MID--AUDIO_20_R2_2004_08_Track08_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_03-06_ORIG_MID--AUDIO_20_R2_2004_12_Track12_wav--1.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_03-06_ORIG_MID--AUDIO_20_R2_2004_12_Track12_wav--2.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_04_ORIG_MID--AUDIO_17_R1_2004_09_Track09_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_04_ORIG_MID--AUDIO_17_R1_2004_11_Track11_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_22_R1_2004_01-04_ORIG_MID--AUDIO_22_R1_2004_03_Track03_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_22_R1_2004_01-04_ORIG_MID--AUDIO_22_R1_2004_05_Track05_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_22_R1_2004_01-04_ORIG_MID--AUDIO_22_R1_2004_10_Track10_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_22_R1_2004_01-04_ORIG_MID--AUDIO_22_R1_2004_17_Track17_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_XP_01_R1_2004_01-02_ORIG_MID--AUDIO_01_R1_2004_02_Track02_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_XP_01_R1_2004_01-02_ORIG_MID--AUDIO_01_R1_2004_03_Track03_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_XP_01_R1_2004_03_ORIG_MID--AUDIO_01_R1_2004_04_Track04_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_XP_01_R1_2004_04-05_ORIG_MID--AUDIO_01_R1_2004_05_Track05_wav.midi",
+    "data\\raw\\classical\\2004\\MIDI-Unprocessed_XP_01_R1_2004_04-05_ORIG_MID--AUDIO_01_R1_2004_06_Track06_wav.midi"
+  ],
+  "source_midi_files": 50,
+  "failed_files": [],
+  "grid_quarter_length": 0.25,
+  "sequence_length": 50,
+  "max_pitches_per_onset": 8,
+  "padding": {
+    "value": -1,
+    "pitch_duration_class_index": 0,
+    "delta_has_pad": false
+  },
+  "bucket_definitions": [
+    {
+      "class_index": 1,
+      "label": "1",
+      "minimum": 1,
+      "maximum": 1
+    },
+    {
+      "class_index": 2,
+      "label": "2",
+      "minimum": 2,
+      "maximum": 2
+    },
+    {
+      "class_index": 3,
+      "label": "3",
+      "minimum": 3,
+      "maximum": 3
+    },
+    {
+      "class_index": 4,
+      "label": "4",
+      "minimum": 4,
+      "maximum": 4
+    },
+    {
+      "class_index": 5,
+      "label": "5-6",
+      "minimum": 5,
+      "maximum": 6
+    },
+    {
+      "class_index": 6,
+      "label": "7-8",
+      "minimum": 7,
+      "maximum": 8
+    },
+    {
+      "class_index": 7,
+      "label": "9-12",
+      "minimum": 9,
+      "maximum": 12
+    },
+    {
+      "class_index": 8,
+      "label": "13+",
+      "minimum": 13,
+      "maximum": null
+    }
+  ],
+  "representative_decode_steps": {
+    "training_piece_count": 40,
+    "delta": {
+      "1": 1,
+      "2": 2,
+      "3": 3,
+      "4": 4,
+      "5": 5,
+      "6": 7,
+      "7": 10,
+      "8": 16
+    },
+    "duration": {
+      "1": 1,
+      "2": 2,
+      "3": 3,
+      "4": 4,
+      "5": 5,
+      "6": 7,
+      "7": 10,
+      "8": 16
+    }
+  },
+  "mappings": {
+    "pitch": {
+      "index_to_value": [
+        -1,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108
+      ],
+      "value_to_index": {
+        "-1": 0,
+        "21": 1,
+        "22": 2,
+        "23": 3,
+        "24": 4,
+        "25": 5,
+        "26": 6,
+        "27": 7,
+        "28": 8,
+        "29": 9,
+        "30": 10,
+        "31": 11,
+        "32": 12,
+        "33": 13,
+        "34": 14,
+        "35": 15,
+        "36": 16,
+        "37": 17,
+        "38": 18,
+        "39": 19,
+        "40": 20,
+        "41": 21,
+        "42": 22,
+        "43": 23,
+        "44": 24,
+        "45": 25,
+        "46": 26,
+        "47": 27,
+        "48": 28,
+        "49": 29,
+        "50": 30,
+        "51": 31,
+        "52": 32,
+        "53": 33,
+        "54": 34,
+        "55": 35,
+        "56": 36,
+        "57": 37,
+        "58": 38,
+        "59": 39,
+        "60": 40,
+        "61": 41,
+        "62": 42,
+        "63": 43,
+        "64": 44,
+        "65": 45,
+        "66": 46,
+        "67": 47,
+        "68": 48,
+        "69": 49,
+        "70": 50,
+        "71": 51,
+        "72": 52,
+        "73": 53,
+        "74": 54,
+        "75": 55,
+        "76": 56,
+        "77": 57,
+        "78": 58,
+        "79": 59,
+        "80": 60,
+        "81": 61,
+        "82": 62,
+        "83": 63,
+        "84": 64,
+        "85": 65,
+        "86": 66,
+        "87": 67,
+        "88": 68,
+        "89": 69,
+        "90": 70,
+        "91": 71,
+        "92": 72,
+        "93": 73,
+        "94": 74,
+        "95": 75,
+        "96": 76,
+        "97": 77,
+        "98": 78,
+        "99": 79,
+        "100": 80,
+        "101": 81,
+        "102": 82,
+        "103": 83,
+        "104": 84,
+        "105": 85,
+        "106": 86,
+        "107": 87,
+        "108": 88
+      },
+      "pad_value": -1,
+      "pad_class_index": 0
+    },
+    "duration_steps": {
+      "index_to_value": [
+        -1,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "value_to_index": {
+        "-1": 0,
+        "1": 1,
+        "2": 2,
+        "3": 3,
+        "4": 4,
+        "5": 5,
+        "6": 6,
+        "7": 7,
+        "8": 8
+      },
+      "pad_value": -1,
+      "pad_class_index": 0
+    },
+    "delta_steps": {
+      "index_to_value": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "value_to_index": {
+        "1": 0,
+        "2": 1,
+        "3": 2,
+        "4": 3,
+        "5": 4,
+        "6": 5,
+        "7": 6,
+        "8": 7
+      },
+      "pad_value": -1,
+      "pad_class_index": null
+    }
+  },
+  "total_raw_notes": 315484,
+  "unique_onset_groups": 120824,
+  "sequence_count": 118324,
+  "pitch_classes": 88,
+  "delta_bucket_distribution": [
+    {
+      "class_index": 1,
+      "bucket": "1",
+      "count": 62392,
+      "percentage": 51.63874726875455
+    },
+    {
+      "class_index": 2,
+      "bucket": "2",
+      "count": 37554,
+      "percentage": 31.081573197378006
+    },
+    {
+      "class_index": 3,
+      "bucket": "3",
+      "count": 10237,
+      "percentage": 8.472654439515328
+    },
+    {
+      "class_index": 4,
+      "bucket": "4",
+      "count": 4354,
+      "percentage": 3.6035886909885453
+    },
+    {
+      "class_index": 5,
+      "bucket": "5-6",
+      "count": 3076,
+      "percentage": 2.545851817519698
+    },
+    {
+      "class_index": 6,
+      "bucket": "7-8",
+      "count": 1268,
+      "percentage": 1.049460372111501
+    },
+    {
+      "class_index": 7,
+      "bucket": "9-12",
+      "count": 1030,
+      "percentage": 0.852479639806661
+    },
+    {
+      "class_index": 8,
+      "bucket": "13+",
+      "count": 913,
+      "percentage": 0.7556445739257102
+    }
+  ],
+  "duration_bucket_distribution": [
+    {
+      "class_index": 1,
+      "bucket": "1",
+      "count": 247335,
+      "percentage": 78.39858756703985
+    },
+    {
+      "class_index": 2,
+      "bucket": "2",
+      "count": 20540,
+      "percentage": 6.510631283995385
+    },
+    {
+      "class_index": 3,
+      "bucket": "3",
+      "count": 18031,
+      "percentage": 5.715345310697215
+    },
+    {
+      "class_index": 4,
+      "bucket": "4",
+      "count": 8756,
+      "percentage": 2.7754180877635632
+    },
+    {
+      "class_index": 5,
+      "bucket": "5-6",
+      "count": 8575,
+      "percentage": 2.718045923089602
+    },
+    {
+      "class_index": 6,
+      "bucket": "7-8",
+      "count": 5140,
+      "percentage": 1.6292426874263037
+    },
+    {
+      "class_index": 7,
+      "bucket": "9-12",
+      "count": 4325,
+      "percentage": 1.3709094597507323
+    },
+    {
+      "class_index": 8,
+      "bucket": "13+",
+      "count": 2782,
+      "percentage": 0.8818196802373496
+    }
+  ],
+  "training_bucket_distribution": {
+    "delta": [
+      {
+        "class_index": 1,
+        "bucket": "1",
+        "count": 47078,
+        "percentage": 51.84002466580043
+      },
+      {
+        "class_index": 2,
+        "bucket": "2",
+        "count": 27752,
+        "percentage": 30.559164886471248
+      },
+      {
+        "class_index": 3,
+        "bucket": "3",
+        "count": 7842,
+        "percentage": 8.63523245314599
+      },
+      {
+        "class_index": 4,
+        "bucket": "4",
+        "count": 3310,
+        "percentage": 3.6448124738476446
+      },
+      {
+        "class_index": 5,
+        "bucket": "5-6",
+        "count": 2389,
+        "percentage": 2.6306516616380735
+      },
+      {
+        "class_index": 6,
+        "bucket": "7-8",
+        "count": 973,
+        "percentage": 1.0714207060585372
+      },
+      {
+        "class_index": 7,
+        "bucket": "9-12",
+        "count": 771,
+        "percentage": 0.8489880414914001
+      },
+      {
+        "class_index": 8,
+        "bucket": "13+",
+        "count": 699,
+        "percentage": 0.7697051115466779
+      }
+    ],
+    "duration": [
+      {
+        "class_index": 1,
+        "bucket": "1",
+        "count": 185512,
+        "percentage": 78.45817455920354
+      },
+      {
+        "class_index": 2,
+        "bucket": "2",
+        "count": 14513,
+        "percentage": 6.137950576662
+      },
+      {
+        "class_index": 3,
+        "bucket": "3",
+        "count": 13582,
+        "percentage": 5.744204832372582
+      },
+      {
+        "class_index": 4,
+        "bucket": "4",
+        "count": 6740,
+        "percentage": 2.8505331004411136
+      },
+      {
+        "class_index": 5,
+        "bucket": "5-6",
+        "count": 6646,
+        "percentage": 2.8107778910284336
+      },
+      {
+        "class_index": 6,
+        "bucket": "7-8",
+        "count": 3981,
+        "percentage": 1.6836754114029782
+      },
+      {
+        "class_index": 7,
+        "bucket": "9-12",
+        "count": 3353,
+        "percentage": 1.4180767783054977
+      },
+      {
+        "class_index": 8,
+        "bucket": "13+",
+        "count": 2120,
+        "percentage": 0.8966068505838518
+      }
+    ]
+  },
+  "representative_training_piece_count": 40,
+  "raw_rhythm_statistics": {
+    "delta_unique": 70,
+    "duration_unique": 72
+  },
+  "piece_boundary_validation": {
+    "tensor_shapes": {
+      "X_pitches": [
+        118324,
+        50,
+        8
+      ],
+      "X_durations": [
+        118324,
+        50,
+        8
+      ],
+      "X_deltas": [
+        118324,
+        50
+      ],
+      "y_pitches": [
+        118324,
+        8
+      ],
+      "y_durations": [
+        118324,
+        8
+      ],
+      "y_deltas": [
+        118324
+      ]
+    },
+    "piece_boundaries_preserved": true,
+    "pitch_duration_alignment": true,
+    "pad_only_in_unused_slots": true,
+    "real_pitch_range_valid": true,
+    "real_durations_at_least_one": true,
+    "later_deltas_positive": true,
+    "onsets_reconstruct_monotonically": true,
+    "simultaneous_notes_grouped": true
+  },
+  "per_piece_sequence_counts": [
+    4508,
+    593,
+    960,
+    1966,
+    6346,
+    1833,
+    3029,
+    1431,
+    2941,
+    2114,
+    2711,
+    4570,
+    2089,
+    722,
+    1134,
+    3109,
+    3064,
+    5536,
+    1484,
+    966,
+    538,
+    1108,
+    431,
+    954,
+    799,
+    939,
+    1084,
+    4254,
+    4396,
+    1198,
+    2583,
+    2488,
+    1863,
+    1279,
+    2164,
+    2143,
+    1230,
+    682,
+    2025,
+    5550,
+    3023,
+    3129,
+    821,
+    3206,
+    3973,
+    1395,
+    2346,
+    7017,
+    2199,
+    2401
+  ]
+}

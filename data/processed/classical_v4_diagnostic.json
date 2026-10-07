@@ -1,0 +1,1685 @@
+{
+  "diagnostic": "V4A musical dataset diagnostic",
+  "genre": "classical",
+  "grid_quarter_length": 0.25,
+  "files_discovered": 1276,
+  "files_requested": 50,
+  "files_analyzed": 50,
+  "files_failed": [],
+  "piece_statistics": [
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_02_R1_2004_01-05_ORIG_MID--AUDIO_02_R1_2004_05_Track05_wav.midi",
+      "notes": 8465,
+      "unique_onsets": 4558,
+      "average_notes_per_onset": 1.85717419921018,
+      "pitch_minimum": 38,
+      "pitch_maximum": 84,
+      "average_duration_steps": 1.9358535144713527,
+      "average_onset_delta_steps": 1.725976305397104
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_02_R1_2004_01-05_ORIG_MID--AUDIO_02_R1_2004_06_Track06_wav.midi",
+      "notes": 1367,
+      "unique_onsets": 643,
+      "average_notes_per_onset": 2.12597200622084,
+      "pitch_minimum": 24,
+      "pitch_maximum": 91,
+      "average_duration_steps": 2.805413313825896,
+      "average_onset_delta_steps": 3.328149300155521
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_02_R1_2004_01-05_ORIG_MID--AUDIO_02_R1_2004_08_Track08_wav.midi",
+      "notes": 2943,
+      "unique_onsets": 1010,
+      "average_notes_per_onset": 2.913861386138614,
+      "pitch_minimum": 24,
+      "pitch_maximum": 105,
+      "average_duration_steps": 1.2789670404349303,
+      "average_onset_delta_steps": 1.510891089108911
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_02_R1_2004_01-05_ORIG_MID--AUDIO_02_R1_2004_10_Track10_wav.midi",
+      "notes": 6468,
+      "unique_onsets": 2016,
+      "average_notes_per_onset": 3.2083333333333335,
+      "pitch_minimum": 24,
+      "pitch_maximum": 101,
+      "average_duration_steps": 1.1578540507111936,
+      "average_onset_delta_steps": 1.2380952380952381
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_05_R1_2004_01_ORIG_MID--AUDIO_05_R1_2004_02_Track02_wav.midi",
+      "notes": 19684,
+      "unique_onsets": 6396,
+      "average_notes_per_onset": 3.0775484677923703,
+      "pitch_minimum": 25,
+      "pitch_maximum": 101,
+      "average_duration_steps": 1.5127006705954074,
+      "average_onset_delta_steps": 1.8220762976860538
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_05_R1_2004_01_ORIG_MID--AUDIO_05_R1_2004_03_Track03_wav.midi",
+      "notes": 5951,
+      "unique_onsets": 1883,
+      "average_notes_per_onset": 3.160382368560807,
+      "pitch_minimum": 24,
+      "pitch_maximum": 101,
+      "average_duration_steps": 1.1587968408670812,
+      "average_onset_delta_steps": 1.397238449283059
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_05_R1_2004_02-03_ORIG_MID--AUDIO_05_R1_2004_06_Track06_wav.midi",
+      "notes": 9894,
+      "unique_onsets": 3079,
+      "average_notes_per_onset": 3.2133809678467036,
+      "pitch_minimum": 26,
+      "pitch_maximum": 105,
+      "average_duration_steps": 1.2860319385486154,
+      "average_onset_delta_steps": 1.6440402728158492
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_07_R1_2004_01_ORIG_MID--AUDIO_07_R1_2004_02_Track02_wav.midi",
+      "notes": 4093,
+      "unique_onsets": 1481,
+      "average_notes_per_onset": 2.763673193787981,
+      "pitch_minimum": 24,
+      "pitch_maximum": 102,
+      "average_duration_steps": 2.7307598338626926,
+      "average_onset_delta_steps": 2.637407157326131
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_07_R1_2004_01_ORIG_MID--AUDIO_07_R1_2004_04_Track04_wav.midi",
+      "notes": 7159,
+      "unique_onsets": 2991,
+      "average_notes_per_onset": 2.393513874958208,
+      "pitch_minimum": 24,
+      "pitch_maximum": 102,
+      "average_duration_steps": 3.152674954602598,
+      "average_onset_delta_steps": 2.8602474088933465
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_07_R1_2004_01_ORIG_MID--AUDIO_07_R1_2004_06_Track06_wav.midi",
+      "notes": 5748,
+      "unique_onsets": 2164,
+      "average_notes_per_onset": 2.656192236598891,
+      "pitch_minimum": 24,
+      "pitch_maximum": 104,
+      "average_duration_steps": 2.3086290883785665,
+      "average_onset_delta_steps": 2.478743068391867
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_07_R1_2004_01_ORIG_MID--AUDIO_07_R1_2004_12_Track12_wav.midi",
+      "notes": 7946,
+      "unique_onsets": 2761,
+      "average_notes_per_onset": 2.877942774357117,
+      "pitch_minimum": 22,
+      "pitch_maximum": 104,
+      "average_duration_steps": 1.8000251698968035,
+      "average_onset_delta_steps": 1.9554509235784137
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_12_01_2004_01-05_ORIG_MID--AUDIO_12_R1_2004_03_Track03_wav--1.midi",
+      "notes": 8420,
+      "unique_onsets": 4620,
+      "average_notes_per_onset": 1.8225108225108224,
+      "pitch_minimum": 29,
+      "pitch_maximum": 89,
+      "average_duration_steps": 2.570665083135392,
+      "average_onset_delta_steps": 2.005844155844156
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_12_01_2004_01-05_ORIG_MID--AUDIO_12_R1_2004_07_Track07_wav.midi",
+      "notes": 5534,
+      "unique_onsets": 2139,
+      "average_notes_per_onset": 2.587190275829827,
+      "pitch_minimum": 26,
+      "pitch_maximum": 101,
+      "average_duration_steps": 1.8361040838453198,
+      "average_onset_delta_steps": 2.0603085553997196
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_12_01_2004_01-05_ORIG_MID--AUDIO_12_R1_2004_08_Track08_wav.midi",
+      "notes": 1953,
+      "unique_onsets": 772,
+      "average_notes_per_onset": 2.5297927461139897,
+      "pitch_minimum": 22,
+      "pitch_maximum": 97,
+      "average_duration_steps": 3.0419866871479773,
+      "average_onset_delta_steps": 3.616580310880829
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_12_01_2004_01-05_ORIG_MID--AUDIO_12_R1_2004_09_Track09_wav.midi",
+      "notes": 3080,
+      "unique_onsets": 1184,
+      "average_notes_per_onset": 2.6013513513513513,
+      "pitch_minimum": 21,
+      "pitch_maximum": 106,
+      "average_duration_steps": 1.3542207792207792,
+      "average_onset_delta_steps": 1.818412162162162
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_12_01_2004_01-05_ORIG_MID--AUDIO_12_R1_2004_10_Track10_wav.midi",
+      "notes": 9961,
+      "unique_onsets": 3159,
+      "average_notes_per_onset": 3.153213042101931,
+      "pitch_minimum": 26,
+      "pitch_maximum": 105,
+      "average_duration_steps": 1.319747013352073,
+      "average_onset_delta_steps": 1.7534029756251979
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_13_01_2004_01-05_ORIG_MID--AUDIO_13_R1_2004_02_Track02_wav.midi",
+      "notes": 8383,
+      "unique_onsets": 3114,
+      "average_notes_per_onset": 2.6920359666024405,
+      "pitch_minimum": 21,
+      "pitch_maximum": 106,
+      "average_duration_steps": 1.8371704640343551,
+      "average_onset_delta_steps": 2.140976236351959
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_13_01_2004_01-05_ORIG_MID--AUDIO_13_R1_2004_05_Track05_wav.midi",
+      "notes": 13031,
+      "unique_onsets": 5586,
+      "average_notes_per_onset": 2.3327962764052987,
+      "pitch_minimum": 27,
+      "pitch_maximum": 89,
+      "average_duration_steps": 1.9776686363287546,
+      "average_onset_delta_steps": 2.049767275331185
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_13_01_2004_01-05_ORIG_MID--AUDIO_13_R1_2004_08_Track08_wav.midi",
+      "notes": 3597,
+      "unique_onsets": 1534,
+      "average_notes_per_onset": 2.344850065189048,
+      "pitch_minimum": 29,
+      "pitch_maximum": 89,
+      "average_duration_steps": 1.3163747567417292,
+      "average_onset_delta_steps": 1.5801825293350718
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_13_01_2004_01-05_ORIG_MID--AUDIO_13_R1_2004_09_Track09_wav.midi",
+      "notes": 1674,
+      "unique_onsets": 1016,
+      "average_notes_per_onset": 1.6476377952755905,
+      "pitch_minimum": 29,
+      "pitch_maximum": 89,
+      "average_duration_steps": 3.9492234169653524,
+      "average_onset_delta_steps": 2.90255905511811
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_13_01_2004_01-05_ORIG_MID--AUDIO_13_R1_2004_10_Track10_wav.midi",
+      "notes": 1891,
+      "unique_onsets": 588,
+      "average_notes_per_onset": 3.2159863945578233,
+      "pitch_minimum": 36,
+      "pitch_maximum": 93,
+      "average_duration_steps": 1.2527763088313062,
+      "average_onset_delta_steps": 1.8775510204081634
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_13_01_2004_01-05_ORIG_MID--AUDIO_13_R1_2004_12_Track12_wav.midi",
+      "notes": 2945,
+      "unique_onsets": 1158,
+      "average_notes_per_onset": 2.5431778929188256,
+      "pitch_minimum": 27,
+      "pitch_maximum": 108,
+      "average_duration_steps": 1.3191850594227503,
+      "average_onset_delta_steps": 1.6735751295336787
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_16_R1_2004_01-08_ORIG_MID--AUDIO_16_R1_2004_02_Track02_wav.midi",
+      "notes": 1906,
+      "unique_onsets": 481,
+      "average_notes_per_onset": 3.9625779625779627,
+      "pitch_minimum": 25,
+      "pitch_maximum": 95,
+      "average_duration_steps": 2.0,
+      "average_onset_delta_steps": 3.8316008316008316
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_16_R1_2004_01-08_ORIG_MID--AUDIO_16_R1_2004_03_Track03_wav.midi",
+      "notes": 1970,
+      "unique_onsets": 1004,
+      "average_notes_per_onset": 1.9621513944223108,
+      "pitch_minimum": 27,
+      "pitch_maximum": 95,
+      "average_duration_steps": 2.5142131979695432,
+      "average_onset_delta_steps": 2.591633466135458
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_16_R1_2004_01-08_ORIG_MID--AUDIO_16_R1_2004_04_Track04_wav.midi",
+      "notes": 3271,
+      "unique_onsets": 849,
+      "average_notes_per_onset": 3.852767962308598,
+      "pitch_minimum": 26,
+      "pitch_maximum": 103,
+      "average_duration_steps": 1.5616019565881993,
+      "average_onset_delta_steps": 2.131919905771496
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_16_R1_2004_01-08_ORIG_MID--AUDIO_16_R1_2004_05_Track05_wav.midi",
+      "notes": 1863,
+      "unique_onsets": 989,
+      "average_notes_per_onset": 1.8837209302325582,
+      "pitch_minimum": 28,
+      "pitch_maximum": 104,
+      "average_duration_steps": 2.859903381642512,
+      "average_onset_delta_steps": 2.3872598584428717
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_16_R1_2004_01-08_ORIG_MID--AUDIO_16_R1_2004_06_Track06_wav.midi",
+      "notes": 3060,
+      "unique_onsets": 1134,
+      "average_notes_per_onset": 2.6984126984126986,
+      "pitch_minimum": 25,
+      "pitch_maximum": 108,
+      "average_duration_steps": 1.4094771241830066,
+      "average_onset_delta_steps": 1.656084656084656
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_16_R1_2004_01-08_ORIG_MID--AUDIO_16_R1_2004_08_Track08_wav.midi",
+      "notes": 12547,
+      "unique_onsets": 4304,
+      "average_notes_per_onset": 2.9151951672862455,
+      "pitch_minimum": 21,
+      "pitch_maximum": 105,
+      "average_duration_steps": 1.900533992189368,
+      "average_onset_delta_steps": 2.246050185873606
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_16_R1_2004_01-08_ORIG_MID--AUDIO_16_R1_2004_13_Track13_wav.midi",
+      "notes": 13189,
+      "unique_onsets": 4446,
+      "average_notes_per_onset": 2.9664867296446245,
+      "pitch_minimum": 21,
+      "pitch_maximum": 107,
+      "average_duration_steps": 1.2953218591250284,
+      "average_onset_delta_steps": 1.7417903733693207
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_01-02_ORIG_MID--AUDIO_20_R2_2004_02_Track02_wav.midi",
+      "notes": 2441,
+      "unique_onsets": 1248,
+      "average_notes_per_onset": 1.9559294871794872,
+      "pitch_minimum": 36,
+      "pitch_maximum": 82,
+      "average_duration_steps": 2.6194182712003276,
+      "average_onset_delta_steps": 2.3349358974358974
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_01-02_ORIG_MID--AUDIO_20_R2_2004_04_Track04_wav.midi",
+      "notes": 5890,
+      "unique_onsets": 2633,
+      "average_notes_per_onset": 2.236992024306874,
+      "pitch_minimum": 24,
+      "pitch_maximum": 98,
+      "average_duration_steps": 1.865025466893039,
+      "average_onset_delta_steps": 2.133687808583365
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_01-02_ORIG_MID--AUDIO_20_R2_2004_06_Track06_wav.midi",
+      "notes": 5103,
+      "unique_onsets": 2538,
+      "average_notes_per_onset": 2.0106382978723403,
+      "pitch_minimum": 24,
+      "pitch_maximum": 94,
+      "average_duration_steps": 2.4142661179698215,
+      "average_onset_delta_steps": 2.2825059101654848
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_01-03_ORIG_MID--AUDIO_17_R1_2004_02_Track02_wav--1.midi",
+      "notes": 2837,
+      "unique_onsets": 1913,
+      "average_notes_per_onset": 1.4830109775222164,
+      "pitch_minimum": 29,
+      "pitch_maximum": 79,
+      "average_duration_steps": 2.24920690870638,
+      "average_onset_delta_steps": 1.4715107161526397
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_01-03_ORIG_MID--AUDIO_17_R1_2004_02_Track02_wav--2.midi",
+      "notes": 3466,
+      "unique_onsets": 1329,
+      "average_notes_per_onset": 2.6079759217456733,
+      "pitch_minimum": 29,
+      "pitch_maximum": 96,
+      "average_duration_steps": 1.6742642815926139,
+      "average_onset_delta_steps": 2.2287434161023327
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_01-03_ORIG_MID--AUDIO_17_R1_2004_03_Track03_wav.midi",
+      "notes": 6385,
+      "unique_onsets": 2214,
+      "average_notes_per_onset": 2.883920505871725,
+      "pitch_minimum": 28,
+      "pitch_maximum": 101,
+      "average_duration_steps": 1.513860610806578,
+      "average_onset_delta_steps": 2.0618789521228544
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_01-03_ORIG_MID--AUDIO_17_R1_2004_06_Track06_wav.midi",
+      "notes": 5296,
+      "unique_onsets": 2193,
+      "average_notes_per_onset": 2.4149566803465574,
+      "pitch_minimum": 26,
+      "pitch_maximum": 101,
+      "average_duration_steps": 1.7324395770392749,
+      "average_onset_delta_steps": 1.994984040127679
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_03-06_ORIG_MID--AUDIO_20_R2_2004_08_Track08_wav.midi",
+      "notes": 3928,
+      "unique_onsets": 1280,
+      "average_notes_per_onset": 3.06875,
+      "pitch_minimum": 30,
+      "pitch_maximum": 102,
+      "average_duration_steps": 1.1275458248472505,
+      "average_onset_delta_steps": 1.6234375
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_03-06_ORIG_MID--AUDIO_20_R2_2004_12_Track12_wav--1.midi",
+      "notes": 1933,
+      "unique_onsets": 732,
+      "average_notes_per_onset": 2.640710382513661,
+      "pitch_minimum": 23,
+      "pitch_maximum": 101,
+      "average_duration_steps": 1.1769270563890326,
+      "average_onset_delta_steps": 1.4672131147540983
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_03-06_ORIG_MID--AUDIO_20_R2_2004_12_Track12_wav--2.midi",
+      "notes": 5389,
+      "unique_onsets": 2075,
+      "average_notes_per_onset": 2.59710843373494,
+      "pitch_minimum": 26,
+      "pitch_maximum": 101,
+      "average_duration_steps": 1.4948970124327334,
+      "average_onset_delta_steps": 2.0014457831325303
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_04_ORIG_MID--AUDIO_17_R1_2004_09_Track09_wav.midi",
+      "notes": 15786,
+      "unique_onsets": 5600,
+      "average_notes_per_onset": 2.8189285714285712,
+      "pitch_minimum": 25,
+      "pitch_maximum": 101,
+      "average_duration_steps": 1.3977575066514634,
+      "average_onset_delta_steps": 1.7432142857142856
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_17_R1_2004_04_ORIG_MID--AUDIO_17_R1_2004_11_Track11_wav.midi",
+      "notes": 9337,
+      "unique_onsets": 3073,
+      "average_notes_per_onset": 3.0383989586723072,
+      "pitch_minimum": 24,
+      "pitch_maximum": 101,
+      "average_duration_steps": 1.2580057834422191,
+      "average_onset_delta_steps": 1.590628050764725
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_22_R1_2004_01-04_ORIG_MID--AUDIO_22_R1_2004_03_Track03_wav.midi",
+      "notes": 5762,
+      "unique_onsets": 3179,
+      "average_notes_per_onset": 1.8125196602705254,
+      "pitch_minimum": 38,
+      "pitch_maximum": 84,
+      "average_duration_steps": 2.4298854564387367,
+      "average_onset_delta_steps": 2.052217678515256
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_22_R1_2004_01-04_ORIG_MID--AUDIO_22_R1_2004_05_Track05_wav.midi",
+      "notes": 1657,
+      "unique_onsets": 871,
+      "average_notes_per_onset": 1.902411021814007,
+      "pitch_minimum": 38,
+      "pitch_maximum": 84,
+      "average_duration_steps": 1.2401931200965601,
+      "average_onset_delta_steps": 1.1963260619977039
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_22_R1_2004_01-04_ORIG_MID--AUDIO_22_R1_2004_10_Track10_wav.midi",
+      "notes": 8124,
+      "unique_onsets": 3256,
+      "average_notes_per_onset": 2.495085995085995,
+      "pitch_minimum": 29,
+      "pitch_maximum": 93,
+      "average_duration_steps": 1.6110290497291975,
+      "average_onset_delta_steps": 1.9886363636363635
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_SMF_22_R1_2004_01-04_ORIG_MID--AUDIO_22_R1_2004_17_Track17_wav.midi",
+      "notes": 12855,
+      "unique_onsets": 4023,
+      "average_notes_per_onset": 3.1953765846383297,
+      "pitch_minimum": 21,
+      "pitch_maximum": 104,
+      "average_duration_steps": 1.569894982497083,
+      "average_onset_delta_steps": 2.054188416604524
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_XP_01_R1_2004_01-02_ORIG_MID--AUDIO_01_R1_2004_02_Track02_wav.midi",
+      "notes": 3210,
+      "unique_onsets": 1445,
+      "average_notes_per_onset": 2.2214532871972317,
+      "pitch_minimum": 29,
+      "pitch_maximum": 96,
+      "average_duration_steps": 2.2570093457943927,
+      "average_onset_delta_steps": 2.0083044982698963
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_XP_01_R1_2004_01-02_ORIG_MID--AUDIO_01_R1_2004_03_Track03_wav.midi",
+      "notes": 5813,
+      "unique_onsets": 2396,
+      "average_notes_per_onset": 2.426126878130217,
+      "pitch_minimum": 24,
+      "pitch_maximum": 96,
+      "average_duration_steps": 2.3855152244968174,
+      "average_onset_delta_steps": 2.5
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_XP_01_R1_2004_03_ORIG_MID--AUDIO_01_R1_2004_04_Track04_wav.midi",
+      "notes": 20462,
+      "unique_onsets": 7067,
+      "average_notes_per_onset": 2.895429460874487,
+      "pitch_minimum": 25,
+      "pitch_maximum": 103,
+      "average_duration_steps": 1.5546867363894048,
+      "average_onset_delta_steps": 1.9395783217772746
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_XP_01_R1_2004_04-05_ORIG_MID--AUDIO_01_R1_2004_05_Track05_wav.midi",
+      "notes": 5345,
+      "unique_onsets": 2249,
+      "average_notes_per_onset": 2.3766118274788797,
+      "pitch_minimum": 24,
+      "pitch_maximum": 101,
+      "average_duration_steps": 1.4980355472404117,
+      "average_onset_delta_steps": 1.814584259670965
+    },
+    {
+      "path": "data\\raw\\classical\\2004\\MIDI-Unprocessed_XP_01_R1_2004_04-05_ORIG_MID--AUDIO_01_R1_2004_06_Track06_wav.midi",
+      "notes": 6472,
+      "unique_onsets": 2451,
+      "average_notes_per_onset": 2.6405548755609956,
+      "pitch_minimum": 22,
+      "pitch_maximum": 97,
+      "average_duration_steps": 2.0156056860321385,
+      "average_onset_delta_steps": 2.1403508771929824
+    }
+  ],
+  "aggregate": {
+    "total_notes": 315484,
+    "total_unique_onsets": 120824,
+    "notes_per_onset": {
+      "statistics": {
+        "count": 120824,
+        "unique_values": 16,
+        "mean": 2.611103754221016,
+        "median": 2.0,
+        "p75": 4.0,
+        "p90": 5.0,
+        "p95": 6.0,
+        "p99": 7.0,
+        "maximum": 16.0
+      },
+      "percentages": {
+        "1_note": 29.092729921207706,
+        "2_notes": 27.903396676157055,
+        "3_notes": 17.76302721313646,
+        "4_notes": 12.788022247235647,
+        "5_notes": 6.6543070913063636,
+        "6_plus_notes": 5.798516850956763
+      }
+    },
+    "rhythm": {
+      "delta_steps": {
+        "count": 120824,
+        "unique_values": 70,
+        "mean": 1.9898612858372509,
+        "median": 1.0,
+        "p75": 2.0,
+        "p90": 3.0,
+        "p95": 5.0,
+        "p99": 11.0,
+        "maximum": 105.0,
+        "percentage_delta_zero": 0.0008276501357346223,
+        "percentage_delta_one_step": 51.637919618618824,
+        "top_20": [
+          {
+            "value": 1,
+            "count": 62391,
+            "percentage": 51.637919618618824
+          },
+          {
+            "value": 2,
+            "count": 37554,
+            "percentage": 31.081573197378003
+          },
+          {
+            "value": 3,
+            "count": 10237,
+            "percentage": 8.47265443951533
+          },
+          {
+            "value": 4,
+            "count": 4354,
+            "percentage": 3.6035886909885453
+          },
+          {
+            "value": 5,
+            "count": 1947,
+            "percentage": 1.6114348142753094
+          },
+          {
+            "value": 6,
+            "count": 1129,
+            "percentage": 0.9344170032443885
+          },
+          {
+            "value": 7,
+            "count": 690,
+            "percentage": 0.5710785936568894
+          },
+          {
+            "value": 8,
+            "count": 578,
+            "percentage": 0.47838177845461166
+          },
+          {
+            "value": 9,
+            "count": 377,
+            "percentage": 0.3120241011719526
+          },
+          {
+            "value": 10,
+            "count": 242,
+            "percentage": 0.2002913328477786
+          },
+          {
+            "value": 11,
+            "count": 242,
+            "percentage": 0.2002913328477786
+          },
+          {
+            "value": 16,
+            "count": 188,
+            "percentage": 0.15559822551810898
+          },
+          {
+            "value": 12,
+            "count": 169,
+            "percentage": 0.13987287293915118
+          },
+          {
+            "value": 13,
+            "count": 146,
+            "percentage": 0.12083691981725483
+          },
+          {
+            "value": 15,
+            "count": 101,
+            "percentage": 0.08359266370919685
+          },
+          {
+            "value": 14,
+            "count": 101,
+            "percentage": 0.08359266370919685
+          },
+          {
+            "value": 17,
+            "count": 43,
+            "percentage": 0.035588955836588755
+          },
+          {
+            "value": 18,
+            "count": 36,
+            "percentage": 0.029795404886446403
+          },
+          {
+            "value": 21,
+            "count": 27,
+            "percentage": 0.022346553664834803
+          },
+          {
+            "value": 19,
+            "count": 26,
+            "percentage": 0.02151890352910018
+          }
+        ]
+      },
+      "duration_steps": {
+        "count": 315484,
+        "unique_values": 72,
+        "mean": 1.7530746408692675,
+        "median": 1.0,
+        "p75": 1.0,
+        "p90": 3.0,
+        "p95": 5.0,
+        "p99": 12.0,
+        "maximum": 105.0,
+        "percentage_duration_one_step": 78.39858756703984,
+        "top_20": [
+          {
+            "value": 1,
+            "count": 247335,
+            "percentage": 78.39858756703984
+          },
+          {
+            "value": 2,
+            "count": 20540,
+            "percentage": 6.510631283995385
+          },
+          {
+            "value": 3,
+            "count": 18031,
+            "percentage": 5.715345310697215
+          },
+          {
+            "value": 4,
+            "count": 8756,
+            "percentage": 2.7754180877635632
+          },
+          {
+            "value": 5,
+            "count": 5921,
+            "percentage": 1.8767988233951642
+          },
+          {
+            "value": 7,
+            "count": 3074,
+            "percentage": 0.9743758796008672
+          },
+          {
+            "value": 6,
+            "count": 2654,
+            "percentage": 0.8412470996944378
+          },
+          {
+            "value": 8,
+            "count": 2066,
+            "percentage": 0.6548668078254365
+          },
+          {
+            "value": 9,
+            "count": 1747,
+            "percentage": 0.5537523297536483
+          },
+          {
+            "value": 11,
+            "count": 974,
+            "percentage": 0.3087319800687198
+          },
+          {
+            "value": 16,
+            "count": 966,
+            "percentage": 0.3061961937847878
+          },
+          {
+            "value": 10,
+            "count": 835,
+            "percentage": 0.2646726933854015
+          },
+          {
+            "value": 12,
+            "count": 769,
+            "percentage": 0.24375245654296257
+          },
+          {
+            "value": 13,
+            "count": 519,
+            "percentage": 0.16450913517008786
+          },
+          {
+            "value": 15,
+            "count": 407,
+            "percentage": 0.12900812719503998
+          },
+          {
+            "value": 14,
+            "count": 343,
+            "percentage": 0.10872183692358407
+          },
+          {
+            "value": 17,
+            "count": 75,
+            "percentage": 0.023772996411862406
+          },
+          {
+            "value": 20,
+            "count": 56,
+            "percentage": 0.01775050398752393
+          },
+          {
+            "value": 19,
+            "count": 45,
+            "percentage": 0.014263797847117446
+          },
+          {
+            "value": 18,
+            "count": 41,
+            "percentage": 0.01299590470515145
+          }
+        ]
+      }
+    },
+    "pitch_register": {
+      "minimum": 21,
+      "maximum": 108,
+      "mean": 64.49618364164269,
+      "median": 65.0,
+      "p05": 40.0,
+      "p95": 87.0,
+      "unique_midi_pitches": 88,
+      "pitch_class_distribution": {
+        "0": {
+          "count": 31328,
+          "percentage": 9.930139087877674
+        },
+        "1": {
+          "count": 21522,
+          "percentage": 6.821899050348036
+        },
+        "2": {
+          "count": 29204,
+          "percentage": 9.25688782949373
+        },
+        "3": {
+          "count": 27172,
+          "percentage": 8.612798113375005
+        },
+        "4": {
+          "count": 25533,
+          "percentage": 8.093278898454438
+        },
+        "5": {
+          "count": 28241,
+          "percentage": 8.951642555565417
+        },
+        "6": {
+          "count": 20011,
+          "percentage": 6.342952415970382
+        },
+        "7": {
+          "count": 31958,
+          "percentage": 10.129832257737318
+        },
+        "8": {
+          "count": 25115,
+          "percentage": 7.960784065118992
+        },
+        "9": {
+          "count": 25089,
+          "percentage": 7.952542759696213
+        },
+        "10": {
+          "count": 28283,
+          "percentage": 8.96495543355606
+        },
+        "11": {
+          "count": 22028,
+          "percentage": 6.982287532806734
+        }
+      },
+      "octave_distribution": {
+        "0": {
+          "count": 118,
+          "percentage": 0.03740284768799686
+        },
+        "1": {
+          "count": 6667,
+          "percentage": 2.1132608943718223
+        },
+        "2": {
+          "count": 30722,
+          "percentage": 9.738053276869826
+        },
+        "3": {
+          "count": 75115,
+          "percentage": 23.80944833969393
+        },
+        "4": {
+          "count": 99066,
+          "percentage": 31.40127550050082
+        },
+        "5": {
+          "count": 77004,
+          "percentage": 24.408210875987372
+        },
+        "6": {
+          "count": 23845,
+          "percentage": 7.558227992544789
+        },
+        "7": {
+          "count": 2945,
+          "percentage": 0.9334863257724639
+        },
+        "8": {
+          "count": 2,
+          "percentage": 0.0006339465709829976
+        }
+      }
+    },
+    "melody_proxy": {
+      "definition": "Highest pitch of each unique onset; diagnostic melody proxy, not the true melody.",
+      "movement_statistics": {
+        "count": 120774,
+        "unique_values": 76,
+        "median": 4.0,
+        "p75": 12.0,
+        "p90": 23.0,
+        "p95": 29.0,
+        "p99": 41.0,
+        "maximum": 85.0,
+        "mean_absolute_movement": 8.196143209631211
+      },
+      "movement_percentages": {
+        "repeated_pitch": 11.84940467319125,
+        "1_2_semitones": 23.190421779522083,
+        "3_5_semitones": 21.90537698511269,
+        "6_12_semitones": 22.452680212628547,
+        "over_12_semitones": 20.602116349545433
+      },
+      "repeated_representative_pitch_percentage": 11.84940467319125,
+      "representative_pitch_count": 120824
+    },
+    "simultaneous_harmony": {
+      "multi_note_onsets": 85668,
+      "average_pitches_per_multi_note_onset": 3.2722019890741,
+      "percentage_with_1_semitone_interval": 12.263622356072279,
+      "percentage_with_2_semitone_interval": 17.48494186860905,
+      "percentage_with_interval_over_octave": 58.45473222206658,
+      "most_common_interval_classes": [
+        {
+          "value": 0,
+          "count": 69551,
+          "percentage": 17.19227384636681
+        },
+        {
+          "value": 3,
+          "count": 51020,
+          "percentage": 12.611606039332788
+        },
+        {
+          "value": 4,
+          "count": 43135,
+          "percentage": 10.662517179667184
+        },
+        {
+          "value": 5,
+          "count": 38950,
+          "percentage": 9.628029306781889
+        },
+        {
+          "value": 7,
+          "count": 38084,
+          "percentage": 9.41396323798412
+        },
+        {
+          "value": 9,
+          "count": 35966,
+          "percentage": 8.890415970416365
+        },
+        {
+          "value": 2,
+          "count": 29823,
+          "percentage": 7.371931142905168
+        },
+        {
+          "value": 8,
+          "count": 29386,
+          "percentage": 7.263909350682737
+        },
+        {
+          "value": 6,
+          "count": 23968,
+          "percentage": 5.924636878689302
+        },
+        {
+          "value": 1,
+          "count": 18247,
+          "percentage": 4.5104660015622375
+        },
+        {
+          "value": 10,
+          "count": 17288,
+          "percentage": 4.273411313367017
+        },
+        {
+          "value": 11,
+          "count": 9130,
+          "percentage": 2.2568397322443814
+        }
+      ],
+      "interval_class_counts": {
+        "0": 69551,
+        "1": 18247,
+        "2": 29823,
+        "3": 51020,
+        "4": 43135,
+        "5": 38950,
+        "6": 23968,
+        "7": 38084,
+        "8": 29386,
+        "9": 35966,
+        "10": 17288,
+        "11": 9130
+      },
+      "pitch_span_statistics": {
+        "count": 85668,
+        "unique_values": 78,
+        "mean": 18.46640519213709,
+        "median": 16.0,
+        "p75": 27.0,
+        "p90": 36.0,
+        "p95": 41.0,
+        "p99": 54.0,
+        "maximum": 78.0
+      }
+    },
+    "repetition": {
+      "consecutive_identical_onset_pitch_sets": 4821,
+      "pitch_set_comparisons": 120774,
+      "repeated_pitch_set_rate_percentage": 3.9917531919121667,
+      "consecutive_identical_representative_pitches": 14311,
+      "melody_proxy_comparisons": 120774,
+      "repeated_melody_proxy_rate_percentage": 11.84940467319125
+    },
+    "notes_per_quarter_length": 5.243298043843175,
+    "unique_onsets_per_quarter_length": 2.008077249081753,
+    "total_duration_quarter_lengths": 60169.0,
+    "strong_imbalance_indicators": {
+      "single_note_onset_percentage": 29.092729921207706,
+      "duration_one_step_percentage": 78.39858756703984,
+      "delta_one_step_percentage": 51.637919618618824,
+      "top_duration_values": [
+        {
+          "value": 1,
+          "count": 247335,
+          "percentage": 78.39858756703984
+        },
+        {
+          "value": 2,
+          "count": 20540,
+          "percentage": 6.510631283995385
+        },
+        {
+          "value": 3,
+          "count": 18031,
+          "percentage": 5.715345310697215
+        },
+        {
+          "value": 4,
+          "count": 8756,
+          "percentage": 2.7754180877635632
+        },
+        {
+          "value": 5,
+          "count": 5921,
+          "percentage": 1.8767988233951642
+        }
+      ],
+      "top_delta_values": [
+        {
+          "value": 1,
+          "count": 62391,
+          "percentage": 51.637919618618824
+        },
+        {
+          "value": 2,
+          "count": 37554,
+          "percentage": 31.081573197378003
+        },
+        {
+          "value": 3,
+          "count": 10237,
+          "percentage": 8.47265443951533
+        },
+        {
+          "value": 4,
+          "count": 4354,
+          "percentage": 3.6035886909885453
+        },
+        {
+          "value": 5,
+          "count": 1947,
+          "percentage": 1.6114348142753094
+        }
+      ]
+    },
+    "grid_quarter_length": 0.25
+  },
+  "generated_v2_comparison": {
+    "files_analyzed": 14,
+    "files_failed": [],
+    "tracks": [
+      {
+        "path": "outputs\\classical_v2_120_t0p9_k10_dt0p9_dk0_cap4_seed50_20260926_202427.mid",
+        "notes": 121,
+        "unique_onsets": 89,
+        "average_notes_per_onset": 1.3595505617977528,
+        "pitch_minimum": 55,
+        "pitch_maximum": 91,
+        "average_duration_steps": 1.8925619834710743,
+        "average_onset_delta_steps": 1.3146067415730338
+      },
+      {
+        "path": "outputs\\classical_v2_190_t0p6_k10_dt0p6_dk0_cap4_seed50_20260926_200800.mid",
+        "notes": 182,
+        "unique_onsets": 142,
+        "average_notes_per_onset": 1.2816901408450705,
+        "pitch_minimum": 55,
+        "pitch_maximum": 96,
+        "average_duration_steps": 1.6813186813186813,
+        "average_onset_delta_steps": 1.1619718309859155
+      },
+      {
+        "path": "outputs\\classical_v2_200_t0p6_k5_seed42_20260926_181319.mid",
+        "notes": 172,
+        "unique_onsets": 69,
+        "average_notes_per_onset": 2.4927536231884058,
+        "pitch_minimum": 44,
+        "pitch_maximum": 103,
+        "average_duration_steps": 1.0,
+        "average_onset_delta_steps": 1.0724637681159421
+      },
+      {
+        "path": "outputs\\classical_v2_200_t0p7_k10_dt0p7_dk0_cap4_seed42_20261003_175844.mid",
+        "notes": 178,
+        "unique_onsets": 79,
+        "average_notes_per_onset": 2.2531645569620253,
+        "pitch_minimum": 42,
+        "pitch_maximum": 83,
+        "average_duration_steps": 1.6853932584269662,
+        "average_onset_delta_steps": 1.1772151898734178
+      },
+      {
+        "path": "outputs\\classical_v2_200_t0p8_k10_dt1p0_dk10_cap4_seed42_20260926_182556.mid",
+        "notes": 178,
+        "unique_onsets": 75,
+        "average_notes_per_onset": 2.3733333333333335,
+        "pitch_minimum": 44,
+        "pitch_maximum": 83,
+        "average_duration_steps": 1.0393258426966292,
+        "average_onset_delta_steps": 1.1066666666666667
+      },
+      {
+        "path": "outputs\\classical_v2_200_t0p8_k10_seed42_20260926_181454.mid",
+        "notes": 163,
+        "unique_onsets": 64,
+        "average_notes_per_onset": 2.546875,
+        "pitch_minimum": 44,
+        "pitch_maximum": 103,
+        "average_duration_steps": 1.0,
+        "average_onset_delta_steps": 1.15625
+      },
+      {
+        "path": "outputs\\classical_v2_200_t0p8_k20_seed42_20260926_181652.mid",
+        "notes": 169,
+        "unique_onsets": 62,
+        "average_notes_per_onset": 2.725806451612903,
+        "pitch_minimum": 61,
+        "pitch_maximum": 103,
+        "average_duration_steps": 1.0,
+        "average_onset_delta_steps": 1.2741935483870968
+      },
+      {
+        "path": "outputs\\classical_v2_200_t1p0_k10_dt1p0_dk0_cap4_seed123_20261003_180505.mid",
+        "notes": 195,
+        "unique_onsets": 116,
+        "average_notes_per_onset": 1.6810344827586208,
+        "pitch_minimum": 47,
+        "pitch_maximum": 88,
+        "average_duration_steps": 1.8051282051282052,
+        "average_onset_delta_steps": 1.206896551724138
+      },
+      {
+        "path": "outputs\\classical_v2_200_t1p0_k10_dt1p0_dk0_cap4_seed42_20261003_180114.mid",
+        "notes": 193,
+        "unique_onsets": 92,
+        "average_notes_per_onset": 2.097826086956522,
+        "pitch_minimum": 57,
+        "pitch_maximum": 83,
+        "average_duration_steps": 1.782383419689119,
+        "average_onset_delta_steps": 1.2608695652173914
+      },
+      {
+        "path": "outputs\\classical_v2_200_t1p0_k10_dt1p0_dk0_cap4_seed7_20261003_180341.mid",
+        "notes": 236,
+        "unique_onsets": 154,
+        "average_notes_per_onset": 1.5324675324675325,
+        "pitch_minimum": 46,
+        "pitch_maximum": 94,
+        "average_duration_steps": 3.8983050847457625,
+        "average_onset_delta_steps": 3.74025974025974
+      },
+      {
+        "path": "outputs\\classical_v2_200_t1p0_k10_dt1p2_dk10_cap4_seed42_20260926_182609.mid",
+        "notes": 201,
+        "unique_onsets": 137,
+        "average_notes_per_onset": 1.467153284671533,
+        "pitch_minimum": 29,
+        "pitch_maximum": 105,
+        "average_duration_steps": 1.8805970149253732,
+        "average_onset_delta_steps": 1.7883211678832116
+      },
+      {
+        "path": "outputs\\classical_v2_200_t1p0_k10_seed42_20260926_181602.mid",
+        "notes": 180,
+        "unique_onsets": 89,
+        "average_notes_per_onset": 2.0224719101123596,
+        "pitch_minimum": 59,
+        "pitch_maximum": 101,
+        "average_duration_steps": 1.1666666666666667,
+        "average_onset_delta_steps": 1.3820224719101124
+      },
+      {
+        "path": "outputs\\classical_v2_30_t0p8_k10_dt0p8_dk0_cap4_seed42_20260926_195942.mid",
+        "notes": 23,
+        "unique_onsets": 11,
+        "average_notes_per_onset": 2.090909090909091,
+        "pitch_minimum": 44,
+        "pitch_maximum": 83,
+        "average_duration_steps": 1.0,
+        "average_onset_delta_steps": 1.0909090909090908
+      },
+      {
+        "path": "outputs\\classical_v2_30_t0p8_k10_seed42_20260926_181143.mid",
+        "notes": 23,
+        "unique_onsets": 11,
+        "average_notes_per_onset": 2.090909090909091,
+        "pitch_minimum": 44,
+        "pitch_maximum": 78,
+        "average_duration_steps": 1.0,
+        "average_onset_delta_steps": 0.9090909090909091
+      }
+    ],
+    "aggregate": {
+      "total_notes": 2214,
+      "total_unique_onsets": 1190,
+      "notes_per_onset": {
+        "statistics": {
+          "count": 1190,
+          "unique_values": 9,
+          "mean": 1.8605042016806723,
+          "median": 2.0,
+          "p75": 2.0,
+          "p90": 3.0,
+          "p95": 4.0,
+          "p99": 5.0,
+          "maximum": 9.0
+        },
+        "percentages": {
+          "1_note": 47.310924369747895,
+          "2_notes": 31.34453781512605,
+          "3_notes": 12.26890756302521,
+          "4_notes": 7.394957983193278,
+          "5_notes": 1.0084033613445378,
+          "6_plus_notes": 0.6722689075630253
+        }
+      },
+      "rhythm": {
+        "delta_steps": {
+          "count": 1190,
+          "unique_values": 15,
+          "mean": 1.6025210084033614,
+          "median": 1.0,
+          "p75": 2.0,
+          "p90": 2.0,
+          "p95": 4.0,
+          "p99": 9.0,
+          "maximum": 15.0,
+          "percentage_delta_zero": 1.0084033613445378,
+          "percentage_delta_one_step": 69.74789915966386,
+          "top_20": [
+            {
+              "value": 1,
+              "count": 830,
+              "percentage": 69.74789915966386
+            },
+            {
+              "value": 2,
+              "count": 246,
+              "percentage": 20.672268907563023
+            },
+            {
+              "value": 3,
+              "count": 30,
+              "percentage": 2.5210084033613445
+            },
+            {
+              "value": 4,
+              "count": 19,
+              "percentage": 1.5966386554621848
+            },
+            {
+              "value": 0,
+              "count": 12,
+              "percentage": 1.0084033613445378
+            },
+            {
+              "value": 7,
+              "count": 12,
+              "percentage": 1.0084033613445378
+            },
+            {
+              "value": 8,
+              "count": 10,
+              "percentage": 0.8403361344537815
+            },
+            {
+              "value": 6,
+              "count": 10,
+              "percentage": 0.8403361344537815
+            },
+            {
+              "value": 9,
+              "count": 6,
+              "percentage": 0.5042016806722689
+            },
+            {
+              "value": 5,
+              "count": 5,
+              "percentage": 0.42016806722689076
+            },
+            {
+              "value": 10,
+              "count": 3,
+              "percentage": 0.25210084033613445
+            },
+            {
+              "value": 11,
+              "count": 3,
+              "percentage": 0.25210084033613445
+            },
+            {
+              "value": 13,
+              "count": 2,
+              "percentage": 0.16806722689075632
+            },
+            {
+              "value": 12,
+              "count": 1,
+              "percentage": 0.08403361344537816
+            },
+            {
+              "value": 15,
+              "count": 1,
+              "percentage": 0.08403361344537816
+            }
+          ]
+        },
+        "duration_steps": {
+          "count": 2214,
+          "unique_values": 15,
+          "mean": 1.7046070460704608,
+          "median": 1.0,
+          "p75": 2.0,
+          "p90": 2.0,
+          "p95": 4.0,
+          "p99": 9.0,
+          "maximum": 16.0,
+          "percentage_duration_one_step": 58.89792231255646,
+          "top_20": [
+            {
+              "value": 1,
+              "count": 1304,
+              "percentage": 58.89792231255646
+            },
+            {
+              "value": 2,
+              "count": 728,
+              "percentage": 32.881662149954835
+            },
+            {
+              "value": 3,
+              "count": 66,
+              "percentage": 2.9810298102981028
+            },
+            {
+              "value": 4,
+              "count": 30,
+              "percentage": 1.3550135501355014
+            },
+            {
+              "value": 5,
+              "count": 17,
+              "percentage": 0.7678410117434508
+            },
+            {
+              "value": 6,
+              "count": 17,
+              "percentage": 0.7678410117434508
+            },
+            {
+              "value": 9,
+              "count": 12,
+              "percentage": 0.5420054200542005
+            },
+            {
+              "value": 7,
+              "count": 11,
+              "percentage": 0.49683830171635046
+            },
+            {
+              "value": 8,
+              "count": 10,
+              "percentage": 0.45167118337850043
+            },
+            {
+              "value": 12,
+              "count": 7,
+              "percentage": 0.31616982836495033
+            },
+            {
+              "value": 13,
+              "count": 3,
+              "percentage": 0.13550135501355012
+            },
+            {
+              "value": 11,
+              "count": 3,
+              "percentage": 0.13550135501355012
+            },
+            {
+              "value": 14,
+              "count": 3,
+              "percentage": 0.13550135501355012
+            },
+            {
+              "value": 15,
+              "count": 2,
+              "percentage": 0.09033423667570009
+            },
+            {
+              "value": 16,
+              "count": 1,
+              "percentage": 0.045167118337850046
+            }
+          ]
+        }
+      },
+      "pitch_register": {
+        "minimum": 29,
+        "maximum": 105,
+        "mean": 77.46973803071364,
+        "median": 77.0,
+        "p05": 59.0,
+        "p95": 97.0,
+        "unique_midi_pitches": 65,
+        "pitch_class_distribution": {
+          "0": {
+            "count": 160,
+            "percentage": 7.226738934056007
+          },
+          "1": {
+            "count": 134,
+            "percentage": 6.052393857271906
+          },
+          "2": {
+            "count": 265,
+            "percentage": 11.969286359530262
+          },
+          "3": {
+            "count": 215,
+            "percentage": 9.710930442637759
+          },
+          "4": {
+            "count": 268,
+            "percentage": 12.104787714543813
+          },
+          "5": {
+            "count": 154,
+            "percentage": 6.9557362240289065
+          },
+          "6": {
+            "count": 211,
+            "percentage": 9.530261969286359
+          },
+          "7": {
+            "count": 196,
+            "percentage": 8.85275519421861
+          },
+          "8": {
+            "count": 57,
+            "percentage": 2.5745257452574526
+          },
+          "9": {
+            "count": 157,
+            "percentage": 7.091237579042457
+          },
+          "10": {
+            "count": 131,
+            "percentage": 5.916892502258356
+          },
+          "11": {
+            "count": 266,
+            "percentage": 12.014453477868111
+          }
+        },
+        "octave_distribution": {
+          "1": {
+            "count": 2,
+            "percentage": 0.09033423667570009
+          },
+          "2": {
+            "count": 32,
+            "percentage": 1.4453477868112015
+          },
+          "3": {
+            "count": 84,
+            "percentage": 3.7940379403794036
+          },
+          "4": {
+            "count": 402,
+            "percentage": 18.157181571815716
+          },
+          "5": {
+            "count": 1127,
+            "percentage": 50.903342366757
+          },
+          "6": {
+            "count": 442,
+            "percentage": 19.96386630532972
+          },
+          "7": {
+            "count": 125,
+            "percentage": 5.645889792231255
+          }
+        }
+      },
+      "melody_proxy": {
+        "definition": "Highest pitch of each unique onset; diagnostic melody proxy, not the true melody.",
+        "movement_statistics": {
+          "count": 1176,
+          "unique_values": 27,
+          "median": 2.0,
+          "p75": 4.0,
+          "p90": 8.0,
+          "p95": 10.0,
+          "p99": 22.5,
+          "maximum": 71.0,
+          "mean_absolute_movement": 3.2151360544217686
+        },
+        "movement_percentages": {
+          "repeated_pitch": 22.61904761904762,
+          "1_2_semitones": 34.183673469387756,
+          "3_5_semitones": 29.166666666666668,
+          "6_12_semitones": 11.394557823129253,
+          "over_12_semitones": 2.6360544217687076
+        },
+        "repeated_representative_pitch_percentage": 22.61904761904762,
+        "representative_pitch_count": 1190
+      },
+      "simultaneous_harmony": {
+        "multi_note_onsets": 627,
+        "average_pitches_per_multi_note_onset": 2.6331738437001593,
+        "percentage_with_1_semitone_interval": 25.677830940988837,
+        "percentage_with_2_semitone_interval": 31.738437001594892,
+        "percentage_with_interval_over_octave": 16.108452950558213,
+        "most_common_interval_classes": [
+          {
+            "value": 3,
+            "count": 276,
+            "percentage": 17.17485998755445
+          },
+          {
+            "value": 2,
+            "count": 257,
+            "percentage": 15.992532669570627
+          },
+          {
+            "value": 4,
+            "count": 239,
+            "percentage": 14.872433105164903
+          },
+          {
+            "value": 1,
+            "count": 195,
+            "percentage": 12.134411947728687
+          },
+          {
+            "value": 5,
+            "count": 192,
+            "percentage": 11.947728686994399
+          },
+          {
+            "value": 7,
+            "count": 107,
+            "percentage": 6.658369632856253
+          },
+          {
+            "value": 0,
+            "count": 92,
+            "percentage": 5.7249533291848165
+          },
+          {
+            "value": 8,
+            "count": 66,
+            "percentage": 4.107031736154325
+          },
+          {
+            "value": 9,
+            "count": 64,
+            "percentage": 3.9825762289981332
+          },
+          {
+            "value": 6,
+            "count": 62,
+            "percentage": 3.8581207218419413
+          },
+          {
+            "value": 10,
+            "count": 33,
+            "percentage": 2.0535158680771626
+          },
+          {
+            "value": 11,
+            "count": 24,
+            "percentage": 1.4934660858742999
+          }
+        ],
+        "interval_class_counts": {
+          "0": 92,
+          "1": 195,
+          "2": 257,
+          "3": 276,
+          "4": 239,
+          "5": 192,
+          "6": 62,
+          "7": 107,
+          "8": 66,
+          "9": 64,
+          "10": 33,
+          "11": 24
+        },
+        "pitch_span_statistics": {
+          "count": 627,
+          "unique_values": 33,
+          "mean": 7.444976076555024,
+          "median": 4.0,
+          "p75": 9.0,
+          "p90": 19.0,
+          "p95": 28.0,
+          "p99": 33.74000000000001,
+          "maximum": 39.0
+        }
+      },
+      "repetition": {
+        "consecutive_identical_onset_pitch_sets": 122,
+        "pitch_set_comparisons": 1176,
+        "repeated_pitch_set_rate_percentage": 10.374149659863946,
+        "consecutive_identical_representative_pitches": 266,
+        "melody_proxy_comparisons": 1176,
+        "repeated_melody_proxy_rate_percentage": 22.61904761904762
+      },
+      "notes_per_quarter_length": 4.583850931677019,
+      "unique_onsets_per_quarter_length": 2.463768115942029,
+      "total_duration_quarter_lengths": 483.0,
+      "strong_imbalance_indicators": {
+        "single_note_onset_percentage": 47.310924369747895,
+        "duration_one_step_percentage": 58.89792231255646,
+        "delta_one_step_percentage": 69.74789915966386,
+        "top_duration_values": [
+          {
+            "value": 1,
+            "count": 1304,
+            "percentage": 58.89792231255646
+          },
+          {
+            "value": 2,
+            "count": 728,
+            "percentage": 32.881662149954835
+          },
+          {
+            "value": 3,
+            "count": 66,
+            "percentage": 2.9810298102981028
+          },
+          {
+            "value": 4,
+            "count": 30,
+            "percentage": 1.3550135501355014
+          },
+          {
+            "value": 5,
+            "count": 17,
+            "percentage": 0.7678410117434508
+          }
+        ],
+        "top_delta_values": [
+          {
+            "value": 1,
+            "count": 830,
+            "percentage": 69.74789915966386
+          },
+          {
+            "value": 2,
+            "count": 246,
+            "percentage": 20.672268907563023
+          },
+          {
+            "value": 3,
+            "count": 30,
+            "percentage": 2.5210084033613445
+          },
+          {
+            "value": 4,
+            "count": 19,
+            "percentage": 1.5966386554621848
+          },
+          {
+            "value": 0,
+            "count": 12,
+            "percentage": 1.0084033613445378
+          }
+        ]
+      },
+      "grid_quarter_length": 0.25
+    }
+  },
+  "interpretation": {
+    "measured_facts_only": true,
+    "melody_proxy_warning": "Highest pitch per onset is a diagnostic proxy and is not claimed to be the true melody."
+  }
+}
