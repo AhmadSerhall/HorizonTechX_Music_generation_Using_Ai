@@ -1,11 +1,13 @@
 """NeuraTune: a compact Streamlit studio for AI MIDI generation."""
 
 import base64
+import hashlib
 import json
 import uuid
 import wave
 from datetime import datetime
 from io import BytesIO
+from html import escape
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -42,6 +44,9 @@ def apply_theme() -> None:
         <style>
         :root { --bg: #070B0F; --surface: #0D1418; --surface-2: #111B20; --line: rgba(148,163,184,.14); --text: #F8FAFC; --muted: #94A3B8; --teal: #14B8A6; --teal-bright: #2DD4BF; --sky: #38BDF8; --green: #22C55E; }
         #MainMenu, footer { visibility: hidden; }
+        /* Keep Streamlit's local-development toolbar (including Deploy) from
+           colliding with NeuraTune's own status area during demos. */
+        [data-testid="stToolbar"] { display: none !important; }
         header[data-testid="stHeader"] { background: transparent; }
         .stApp { background: radial-gradient(circle at 82% -10%, rgba(20,184,166,.12), transparent 32%), #070B0F; color: var(--text); }
         .block-container { max-width: 1460px; min-height: 100vh; padding: 1rem 1.25rem 1.1rem; }
@@ -77,13 +82,20 @@ def apply_theme() -> None:
         .card-title { color: #99F6E4; font-size: .69rem; font-weight: 800; letter-spacing: .12em; margin: .1rem 0 .5rem; }
         .temperature-state { color: #99F6E4; font-weight: 700; font-size: .8rem; }
         .control-help { color: var(--muted); font-size: .73rem; margin-top: -.4rem; }
-        .player-top { display: flex; align-items: center; gap: .85rem; min-height: 150px; }
-        .album-art { flex: 0 0 126px; width: 126px; height: 126px; position: relative; overflow: hidden; border-radius: 16px; border: 1px solid rgba(45,212,191,.32); background: radial-gradient(circle at 28% 25%, #5EEAD4 0, #14B8A6 24%, #12324A 56%, #070B0F 100%); box-shadow: inset 0 0 30px rgba(255,255,255,.10), 0 12px 26px rgba(0,0,0,.28); }
-        .album-art::before, .album-art::after { content: ''; position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,.35); }
-        .album-art::before { width: 115px; height: 115px; left: 5px; top: 5px; }
-        .album-art::after { width: 58px; height: 58px; left: 33px; top: 33px; box-shadow: 0 0 26px #38BDF8; }
+        .settings-context { color: var(--muted); font-size: .72rem; margin: -.15rem 0 .8rem; }
+        .player-top { display: flex; align-items: center; gap: 1rem; min-height: 150px; }
+        .composition-copy { flex: 1; min-width: 0; }
+        .album-art { box-sizing: border-box; flex: 0 0 126px; width: 126px; height: 126px; position: relative; overflow: hidden; border-radius: 16px; border: 1px solid rgba(45,212,191,.24); background: radial-gradient(circle at var(--record-light-x) var(--record-light-y), rgba(20,184,166,.22), transparent 65%), #0A141B; box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 8px 24px rgba(0,0,0,.22); }
+        .record-disc { position: absolute; inset: 10px; border-radius: 50%; border: 1px solid rgba(125,211,252,.2); background: repeating-radial-gradient(circle, transparent 0 4px, rgba(125,211,252,.07) 4px 5px), conic-gradient(from var(--record-angle), #0C1C25, #18383E, #0B1822, #16434A, #0C1C25); box-shadow: 0 0 15px rgba(20,184,166,.1); }
+        .record-orbit { position: absolute; inset: 5px; border: 1px solid transparent; border-top-color: rgba(94,234,212,.5); border-right-color: rgba(56,189,248,.2); border-radius: 50%; transform: rotate(var(--record-angle)); }
+        .record-orbit-inner { inset: 21px; border-top-color: rgba(125,211,252,.35); border-right-color: transparent; border-bottom-color: rgba(45,212,191,.22); transform: rotate(var(--record-inner-angle)); }
+        .record-orbit-ambient { animation: record-orbit 90s linear infinite; }
+        .record-center { position: absolute; inset: 43px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(94,234,212,.36); color: #B5EEE8; background: radial-gradient(circle at 30% 25%, #1E5961, #102630); box-shadow: 0 0 14px rgba(45,212,191,.15); font-size: .55rem; font-weight: 700; letter-spacing: .12em; padding-left: .12em; }
+        .composition-enter { animation: composition-arrive .5s ease-out both; }
+        @keyframes record-orbit { from { transform: rotate(var(--record-angle)); } to { transform: rotate(calc(var(--record-angle) + 360deg)); } }
+        @keyframes composition-arrive { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
         .composition-kicker { color: #7DD3FC; font-size: .68rem; font-weight: 800; letter-spacing: .12em; }
-        .composition-title { color: var(--text); font-size: 1.18rem; font-weight: 800; margin: .25rem 0; }
+        .composition-title { color: var(--text); font-size: 1.18rem; line-height: 1.3; font-weight: 800; margin: .3rem 0 .35rem; overflow-wrap: anywhere; }
         .composition-meta { color: var(--muted); font-size: .8rem; }
         .midi-badge { display: inline-block; margin-top: .55rem; color: #BAE6FD; border: 1px solid rgba(56,189,248,.32); border-radius: 999px; padding: .18rem .46rem; font-size: .67rem; }
         .wave-caption { color: var(--muted); font-size: .67rem; margin: .55rem 0 .2rem; }
@@ -96,7 +108,7 @@ def apply_theme() -> None:
         .metric-block { padding: .48rem; border-radius: 10px; border: 1px solid rgba(255,255,255,.08); background: rgba(5,9,20,.42); }
         .metric-value { color: var(--text); font-size: 1rem; font-weight: 800; overflow-wrap: anywhere; }
         .metric-label { color: var(--muted); font-size: .63rem; margin-top: .08rem; }
-        .secondary-meta { color: var(--muted); font-size: .75rem; display: flex; flex-wrap: wrap; gap: .35rem 1rem; margin-bottom: .55rem; }
+        .secondary-meta { color: var(--muted); font-size: .71rem; line-height: 1.55; display: flex; flex-wrap: wrap; gap: .25rem .9rem; margin: .7rem 0 .55rem; }
         .empty-player { min-height: 230px; display: grid; place-items: center; text-align: center; color: var(--muted); }
         .empty-icon { color: #2DD4BF; font-size: 2rem; }
         .analysis-title { color: #E2E8F0; font-size: .92rem; font-weight: 800; margin: .1rem 0 .25rem; }
@@ -105,7 +117,10 @@ def apply_theme() -> None:
         .neural-pulse { width: 42px; height: 42px; margin: 0 auto .75rem; border: 3px solid rgba(45,212,191,.22); border-top-color: #2DD4BF; border-right-color: #38BDF8; border-radius: 50%; animation: spin 1s linear infinite; }
         .loading-title { color: #F8FAFC; font-weight: 800; font-size: 1rem; } .loading-copy { color: #94A3B8; font-size: .78rem; margin-top: .32rem; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @media (max-width: 800px) { .block-container { min-height: auto; padding: .75rem .8rem 1.5rem; } .studio-header { align-items: flex-start; } .header-copy { display: none; } .header-right { max-width: 48%; } .badge { font-size: .61rem; } .metric-row { grid-template-columns: repeat(2, 1fr); } .player-top { align-items: flex-start; } }
+        @media (max-width: 800px) { .block-container { min-height: auto; padding: .75rem .8rem 1.5rem; } .studio-header { align-items: flex-start; } .header-copy { display: none; } .header-right { max-width: 52%; } .badge { font-size: .61rem; } .metric-row { grid-template-columns: repeat(2, 1fr); } .player-top { align-items: flex-start; } }
+        @media (max-width: 640px) { .studio-header { flex-wrap: wrap; gap: .65rem; } .header-right { width: 100%; max-width: none; text-align: left; } .header-right .badge { margin-left: 0; margin-right: .25rem; } }
+        @media (max-width: 480px) { .player-top { flex-wrap: wrap; gap: .85rem; } .composition-copy { flex-basis: 150px; } .composition-title { font-size: 1.08rem; } .composition-kicker { font-size: .6rem; letter-spacing: .08em; } }
+        @media (prefers-reduced-motion: reduce) { .record-orbit-ambient, .composition-enter { animation: none; } }
         </style>
         """,
         unsafe_allow_html=True,
@@ -350,6 +365,7 @@ def render_controls() -> tuple[dict[str, int | float | None], bool]:
     """Render a compact settings card for the existing generation controls."""
     with st.container(border=True):
         st.markdown("<div class='card-title'>GENERATION SETTINGS</div>", unsafe_allow_html=True)
+        st.markdown("<div class='settings-context'>For your next composition</div>", unsafe_allow_html=True)
         length = st.slider("Composition Length", 50, 500, 200, 10)
         st.markdown("<div class='control-help'>Length is measured as generated musical moments.</div>", unsafe_allow_html=True)
         st.markdown("<div class='control-help'>CREATIVITY PRESET</div>", unsafe_allow_html=True)
@@ -443,7 +459,22 @@ def waveform_markup() -> str:
     return f"<div class='wave-caption'>Decorative sequence visualization</div><div class='waveform'>{bars}</div>"
 
 
-def player_markup(result: dict[str, object] | None) -> str:
+def neural_record_markup(seed: object) -> str:
+    """Decorative record geometry, stable per saved seed and independent of RNG."""
+    identity = hashlib.sha256(str(seed).encode("utf-8")).digest()
+    angle = int.from_bytes(identity[:2], "big") % 360
+    inner_angle = int.from_bytes(identity[2:4], "big") % 360
+    light_x, light_y = 20 + identity[4] % 61, 15 + identity[5] % 41
+    return (
+        f'<div class="album-art" role="img" aria-label="Neural Record — decorative composition artwork" '
+        f'style="--record-angle:{angle}deg;--record-inner-angle:{inner_angle}deg;'
+        f'--record-light-x:{light_x}%;--record-light-y:{light_y}%">'
+        '<div class="record-disc"></div><div class="record-orbit record-orbit-ambient"></div>'
+        '<div class="record-orbit record-orbit-inner"></div><div class="record-center"></div></div>'
+    )
+
+
+def player_markup(result: dict[str, object] | None, *, animate: bool = False) -> str:
     """Create the compact music-player visual for empty and generated states."""
     if not result:
         return """
@@ -459,9 +490,12 @@ def player_markup(result: dict[str, object] | None) -> str:
         minimum_duration = f"Historical {settings['min_duration']}"
     else:
         minimum_duration = "Original"
-    display_name = str(result.get("display_name") or f"Neural Composition #{settings['seed']}")
+    display_name = escape(str(result.get("display_name") or f"Neural Composition #{settings['seed']}"))
+    entrance_class = " composition-enter" if animate else ""
     return f"""
-    <div class="player-top"><div class="album-art"></div><div>
+    <div class="composition-summary{entrance_class}">
+    <div class="player-top">{neural_record_markup(settings['seed'])}<div class="composition-copy">
+      <div class="composition-kicker">SELECTED COMPOSITION</div>
       <div class="composition-title">{display_name}</div>
       <div class="composition-meta">Classical Piano · AI Generated</div>
       <div class="midi-badge">MIDI · Generated by NeuraTune</div>
@@ -473,7 +507,8 @@ def player_markup(result: dict[str, object] | None) -> str:
       <div class="metric-block"><div class="metric-value">{settings['tempo']}</div><div class="metric-label">BPM</div></div>
       <div class="metric-block"><div class="metric-value">{metrics.get('unique_pitches', '—')}</div><div class="metric-label">PITCHES</div></div>
     </div>
-    <div class="secondary-meta"><span>Pitch range: {metrics.get('lowest_pitch', '—')}–{metrics.get('highest_pitch', '—')}</span><span>Seed: {settings['seed']}</span><span>Min duration: {minimum_duration}</span></div>
+    <div class="secondary-meta"><span>Pitch range: {metrics.get('lowest_pitch', '—')}–{metrics.get('highest_pitch', '—')}</span><span>Saved seed: {settings['seed']}</span><span>Note durations: {minimum_duration}</span></div>
+    </div>
     """
 
 
@@ -545,7 +580,12 @@ def render_player() -> None:
     result = st.session_state.latest_result
     with st.container(border=True):
         st.markdown("<div class='card-title'>YOUR AI COMPOSITION</div>", unsafe_allow_html=True)
-        st.markdown(player_markup(result), unsafe_allow_html=True)
+        # Presentation-only state: replay the entrance when the selected track
+        # changes, not when controls for the next generation are adjusted.
+        composition_id = str(result.get("id") or result.get("midi_path")) if result else None
+        animate = bool(result) and st.session_state.get("displayed_composition_id") != composition_id
+        st.markdown(player_markup(result, animate=animate), unsafe_allow_html=True)
+        st.session_state.displayed_composition_id = composition_id
         if result:
             midi_path = Path(str(result["midi_path"]))
             if midi_path.exists():
@@ -823,10 +863,13 @@ def render_piano_visualizer_player(
     <style>
       html, body { height: 100%; margin: 0; background: transparent; font-family: Inter, system-ui, sans-serif; }
       .mini-player { position: relative; height: 54px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid rgba(45,212,191,.28); border-radius: 16px; background: #0B1115; color: #F8FAFC; }
-      .mini-player.floating { position: fixed; right: 7px; bottom: 7px; z-index: 5; width: 72px; height: 72px; padding: 5px; display: grid; place-items: center; border-radius: 50%; border-color: rgba(45,212,191,.6); background: conic-gradient(#2DD4BF var(--mini-progress, 0%), #1B2A30 0); box-shadow: 0 10px 32px rgba(0,0,0,.48), 0 0 22px rgba(45,212,191,.24); }
+      .mini-player.floating { position: fixed; right: 7px; bottom: 7px; z-index: 5; width: 72px; height: 72px; padding: 5px; display: grid; place-items: center; border-radius: 50%; border-color: rgba(45,212,191,.6); background: conic-gradient(#2DD4BF var(--mini-progress, 0%), #1B2A30 0); box-shadow: 0 10px 32px rgba(0,0,0,.48), 0 0 22px rgba(45,212,191,.24); animation: mini-pop-in .42s cubic-bezier(.2,.9,.25,1.2) both; }
       .mini-player.floating::before { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: #0B1115; }
-      .mini-player.floating .mini-play { position: relative; z-index: 1; width: 48px; height: 48px; }
+      .mini-player.floating .mini-play { position: relative; z-index: 1; width: 50px; height: 50px; display: grid; place-items: center; padding: 0; font-size: 1.5rem; line-height: 1; font-weight: 900; text-indent: .02em; }
       .mini-player.floating .mini-copy, .mini-player.floating .mini-time { display: none; }
+      .mini-player.floating.is-playing .mini-play { animation: mini-pulse 1.8s ease-in-out infinite; }
+      @keyframes mini-pop-in { 0% { opacity: 0; transform: translateY(14px) scale(.55) rotate(-8deg); filter: blur(2px); } 65% { opacity: 1; transform: translateY(-2px) scale(1.06) rotate(2deg); filter: blur(0); } 100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); } }
+      @keyframes mini-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(45,212,191,.12); } 50% { box-shadow: 0 0 0 8px rgba(45,212,191,0); } }
       .mini-play { width: 34px; height: 34px; padding: 0; border-radius: 50%; background: linear-gradient(145deg, #14B8A6, #38BDF8); color: #071014; }
       .mini-copy { flex: 1; min-width: 0; } .mini-label { color: #99F6E4; font-size: 10px; font-weight: 800; letter-spacing: .08em; } .mini-progress { height: 4px; margin-top: 6px; overflow: hidden; border-radius: 99px; background: #26333B; } .mini-progress > div { width: 0%; height: 100%; background: linear-gradient(90deg, #14B8A6, #38BDF8); }
       .mini-time { min-width: 74px; color: #CBD5E1; font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
@@ -935,7 +978,7 @@ def render_piano_visualizer_player(
         if ((audioSource && !audio.paused && !audio.ended) || (!audioSource && visualPlaying && current < duration)) frameId = requestAnimationFrame(render);
         else if (!audioSource) { visualTime = current; visualPlaying = false; }
       };
-      const updatePlayButton = playing => { playButton.textContent = playing ? '⏸ Pause' : '▶ Play'; miniToggle.textContent = playing ? '⏸' : '▶'; miniToggle.setAttribute('aria-label', playing ? 'Pause composition' : 'Play composition'); };
+      const updatePlayButton = playing => { playButton.textContent = playing ? '⏸ Pause' : '▶ Play'; miniToggle.textContent = playing ? '⏸' : '▶'; miniToggle.setAttribute('aria-label', playing ? 'Pause composition' : 'Play composition'); miniPlayer.classList.toggle('is-playing', playing); };
       const setFrameExpanded = expanded => { try { const frame = window.frameElement; if (!frame) return; if (expanded) { if (savedFrameStyle === undefined) savedFrameStyle = frame.getAttribute('style'); frame.style.position = 'fixed'; frame.style.inset = '0'; frame.style.width = '100vw'; frame.style.height = '100vh'; frame.style.zIndex = '999999'; frame.style.border = '0'; } else if (savedFrameStyle === null) frame.removeAttribute('style'); else if (savedFrameStyle !== undefined) frame.setAttribute('style', savedFrameStyle); } catch (_) {} };
       const setFrameMinimized = () => { try { const frame = window.frameElement; if (!frame) return; if (savedFrameStyle === undefined) savedFrameStyle = frame.getAttribute('style'); frame.style.position = 'fixed'; frame.style.left = 'auto'; frame.style.top = 'auto'; frame.style.right = '18px'; frame.style.bottom = '18px'; frame.style.width = '86px'; frame.style.height = '86px'; frame.style.zIndex = '999999'; frame.style.border = '0'; } catch (_) {} };
       const openModal = () => { modal.classList.add('open'); miniPlayer.classList.remove('floating'); setFrameExpanded(true); };
