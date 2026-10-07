@@ -619,7 +619,7 @@ def render_player() -> None:
                 else:
                     st.warning(preview_status)
                 st.download_button(
-                    "Download MIDI",
+                    "Download Music",
                     data=midi_path.read_bytes(),
                     file_name=midi_path.name,
                     mime="audio/midi",
